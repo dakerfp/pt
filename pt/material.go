@@ -15,6 +15,10 @@ type Material struct {
 	Transparent    bool
 }
 
+func CopyMaterial(m Material) Material {
+	return m
+}
+
 func DiffuseMaterial(color Color) Material {
 	return Material{color, nil, nil, nil, nil, 1, 0, 1, 0, 0, -1, false}
 }

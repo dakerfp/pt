@@ -46,6 +46,7 @@ func NewRenderer(scene *Scene, camera *Camera, sampler Sampler, w, h int) *Rende
 }
 
 func (r *Renderer) run() {
+	wg := &sync.WaitGroup{}
 	scene := r.Scene
 	camera := r.Camera
 	sampler := r.Sampler
@@ -54,13 +55,12 @@ func (r *Renderer) run() {
 	spp := r.SamplesPerPixel
 	sppRoot := int(math.Sqrt(float64(r.SamplesPerPixel)))
 	ncpu := r.NumCPU
-
 	runtime.GOMAXPROCS(ncpu)
 	scene.Compile()
-	ch := make(chan int, h)
 	r.printf("%d x %d pixels, %d spp, %d cores\n", w, h, spp, ncpu)
-	start := time.Now()
+	// start := time.Now()
 	scene.rays = 0
+	wg.Add(ncpu)
 	for i := 0; i < ncpu; i++ {
 		go func(i int) {
 			rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
@@ -73,8 +73,8 @@ func (r *Renderer) run() {
 								fu := (float64(u) + 0.5) / float64(sppRoot)
 								fv := (float64(v) + 0.5) / float64(sppRoot)
 								ray := camera.CastRay(x, y, w, h, fu, fv, rnd)
-								sample := sampler.Sample(scene, ray, rnd)
-								buf.AddSample(x, y, sample)
+								sample := sampler.SampleFeature(scene, ray, rnd)
+								buf.AddSampleFeature(x, y, sample)
 							}
 						}
 					} else {
@@ -83,8 +83,8 @@ func (r *Renderer) run() {
 							fu := rnd.Float64()
 							fv := rnd.Float64()
 							ray := camera.CastRay(x, y, w, h, fu, fv, rnd)
-							sample := sampler.Sample(scene, ray, rnd)
-							buf.AddSample(x, y, sample)
+							sample := sampler.SampleFeature(scene, ray, rnd)
+							buf.AddSampleFeature(x, y, sample)
 						}
 					}
 					// adaptive sampling
@@ -97,8 +97,8 @@ func (r *Renderer) run() {
 							fu := rnd.Float64()
 							fv := rnd.Float64()
 							ray := camera.CastRay(x, y, w, h, fu, fv, rnd)
-							sample := sampler.Sample(scene, ray, rnd)
-							buf.AddSample(x, y, sample)
+							sample := sampler.SampleFeature(scene, ray, rnd)
+							buf.AddSampleFeature(x, y, sample)
 						}
 					}
 					// firefly reduction
@@ -108,21 +108,22 @@ func (r *Renderer) run() {
 								fu := rnd.Float64()
 								fv := rnd.Float64()
 								ray := camera.CastRay(x, y, w, h, fu, fv, rnd)
-								sample := sampler.Sample(scene, ray, rnd)
-								buf.AddSample(x, y, sample)
+								sample := sampler.SampleFeature(scene, ray, rnd)
+								buf.AddSampleFeature(x, y, sample)
 							}
 						}
 					}
 				}
-				ch <- 1
 			}
+			wg.Done()
 		}(i)
 	}
-	r.showProgress(start, scene.RayCount(), 0, h)
-	for i := 0; i < h; i++ {
-		<-ch
-		r.showProgress(start, scene.RayCount(), i+1, h)
-	}
+	wg.Wait()
+	// r.showProgress(start, scene.RayCount(), 0, h)
+	// for i := 0; i < h; i++ {
+	// 	<-ch
+	// 	r.showProgress(start, scene.RayCount(), i+1, h)
+	// }
 	r.printf("\n")
 }
 
@@ -164,6 +165,11 @@ func (r *Renderer) Render() image.Image {
 	return r.Buffer.Image(ColorChannel)
 }
 
+func (r *Renderer) ExtractFeatures() (image.Image, image.Image) {
+	r.run()
+	return r.Buffer.Image(ColorChannel), r.Buffer.Image(DistanceChannel)
+}
+
 func (r *Renderer) IterativeRender(pathTemplate string, iterations int) image.Image {
 	var wg sync.WaitGroup
 	for i := 1; i <= iterations; i++ {
@@ -174,8 +180,10 @@ func (r *Renderer) IterativeRender(pathTemplate string, iterations int) image.Im
 			path = fmt.Sprintf(pathTemplate, i)
 		}
 		buf := r.Buffer.Copy()
-		wg.Add(1)
+		wg.Add(3)
 		go r.writeImage(path, buf, ColorChannel, &wg)
+		go r.writeImage("dist-"+path, buf, DistanceChannel, &wg)
+		go r.writeImage("norm-"+path, buf, NormalChannel, &wg)
 		// wg.Add(1)
 		// go r.writeImage("deviation.png", buf, StandardDeviationChannel, &wg)
 		// wg.Add(1)
