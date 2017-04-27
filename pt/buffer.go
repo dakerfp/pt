@@ -76,8 +76,9 @@ func (p *VectorDistribution) AddSample(v Vector) {
 }
 
 type Pixel struct {
-	normal VectorDistribution
 	color  ColorDistribution
+	albedo ColorDistribution
+	normal VectorDistribution
 	dist   FloatDistribution
 }
 
@@ -86,8 +87,9 @@ func (p *Pixel) AddSample(sample Color) {
 }
 
 func (p *Pixel) AddSampleFeature(sample Features) {
-	p.normal.AddSample(sample.Normal)
 	p.color.AddSample(sample.Color)
+	p.albedo.AddSample(sample.Albedo)
+	p.normal.AddSample(sample.Normal)
 	p.dist.AddSample(sample.Distance)
 }
 
@@ -101,6 +103,10 @@ func (p *Pixel) Variance() Color {
 
 func (p *Pixel) Distance() float64 {
 	return p.dist.M
+}
+
+func (p *Pixel) Albedo() Color {
+	return p.albedo.M
 }
 
 func (p *Pixel) StandardDeviation() Color {

@@ -180,10 +180,11 @@ func (r *Renderer) IterativeRender(pathTemplate string, iterations int) image.Im
 			path = fmt.Sprintf(pathTemplate, i)
 		}
 		buf := r.Buffer.Copy()
-		wg.Add(3)
+		wg.Add(4)
 		go r.writeImage(path, buf, ColorChannel, &wg)
 		go r.writeImage("dist-"+path, buf, DistanceChannel, &wg)
 		go r.writeImage("norm-"+path, buf, NormalChannel, &wg)
+		go r.writeImage("alb-"+path, buf, AlbedoChannel, &wg)
 		// wg.Add(1)
 		// go r.writeImage("deviation.png", buf, StandardDeviationChannel, &wg)
 		// wg.Add(1)
