@@ -14,52 +14,93 @@ const (
 	SamplesChannel
 	DistanceChannel
 	NormalChannel
+	AlbedoChannel
 )
 
-type Pixel struct {
-	Samples int
-	M, V    Color
-
-	DistSum      float64
-	MNorm, VNorm Vector
+type FloatDistribution struct {
+	M, V float64
+	N    int
 }
 
-func (p *Pixel) AddSample(sample Color) {
-	p.Samples++
-	if p.Samples == 1 {
-		p.M = sample
+func (fd *FloatDistribution) AddSample(v float64) {
+	fd.N++
+	if fd.N == 1 {
+		fd.M = v
+		fd.V = 0
+		return
+	}
+	m := fd.M
+	fd.M = v + (v-m)/float64(fd.N)
+	fd.V = fd.V + (v-m)*(v-fd.M)
+}
+
+type ColorDistribution struct {
+	M, V Color
+	N    int
+}
+
+func (p *ColorDistribution) AddSample(v Color) {
+	p.N++
+	if p.N == 1 {
+		p.M = v
+		p.V = Black
 		return
 	}
 	m := p.M
-	p.M = p.M.Add(sample.Sub(p.M).DivScalar(float64(p.Samples)))
-	p.V = p.V.Add(sample.Sub(m).Mul(sample.Sub(p.M)))
+	p.M = p.M.Add(v.Sub(p.M).DivScalar(float64(p.N)))
+	p.V = p.V.Add(v.Sub(m).Mul(v.Sub(p.M)))
+}
+
+func (p *ColorDistribution) Variance() Color {
+	if p.N < 2 {
+		return Black
+	}
+	return p.V.DivScalar(float64(p.N - 1))
+}
+
+type VectorDistribution struct {
+	M, V Vector
+	N    int
+}
+
+func (p *VectorDistribution) AddSample(v Vector) {
+	p.N++
+	if p.N == 1 {
+		p.M = v
+		p.V = Vector{}
+		return
+	}
+	m := p.M
+	p.M = p.M.Add(v.Sub(p.M).DivScalar(float64(p.N)))
+	p.V = p.V.Add(v.Sub(m).Mul(v.Sub(p.M)))
+}
+
+type Pixel struct {
+	normal VectorDistribution
+	color  ColorDistribution
+	dist   FloatDistribution
+}
+
+func (p *Pixel) AddSample(sample Color) {
+	p.color.AddSample(sample)
 }
 
 func (p *Pixel) AddSampleFeature(sample Features) {
-	p.AddSample(sample.Color)
-	if p.Samples == 1 {
-		p.MNorm = sample.Normal
-		return
-	}
-	m := p.MNorm
-	p.MNorm = p.MNorm.Add(sample.Normal.Sub(p.MNorm).DivScalar(float64(p.Samples)))
-	p.VNorm = p.VNorm.Add(sample.Normal.Sub(m).Mul(sample.Normal.Sub(p.MNorm)))
-	p.DistSum += sample.Distance // XXX
+	p.normal.AddSample(sample.Normal)
+	p.color.AddSample(sample.Color)
+	p.dist.AddSample(sample.Distance)
 }
 
 func (p *Pixel) Color() Color {
-	return p.M
+	return p.color.M
 }
 
 func (p *Pixel) Variance() Color {
-	if p.Samples < 2 {
-		return Black
-	}
-	return p.V.DivScalar(float64(p.Samples - 1))
+	return p.color.Variance()
 }
 
 func (p *Pixel) Distance() float64 {
-	return p.DistSum / float64(p.Samples)
+	return p.dist.M
 }
 
 func (p *Pixel) StandardDeviation() Color {
@@ -67,7 +108,7 @@ func (p *Pixel) StandardDeviation() Color {
 }
 
 func (p *Pixel) Normal() Color {
-	n := p.MNorm
+	n := p.normal.M
 	n = n.AddScalar(1.0).DivScalar(2.0)
 	return Color{n.X, n.Y, n.Z}
 }
@@ -103,7 +144,7 @@ func (b *Buffer) AddSampleFeature(x, y int, sample Features) {
 }
 
 func (b *Buffer) Samples(x, y int) int {
-	return b.Pixels[y*b.W+x].Samples
+	return b.Pixels[y*b.W+x].color.N
 }
 
 func (b *Buffer) Color(x, y int) Color {
@@ -133,7 +174,7 @@ func (b *Buffer) Image(channel Channel) image.Image {
 	var maxSamples float64
 	if channel == SamplesChannel {
 		for _, pixel := range b.Pixels {
-			maxSamples = math.Max(maxSamples, float64(pixel.Samples))
+			maxSamples = math.Max(maxSamples, float64(pixel.color.N))
 		}
 	}
 	for y := 0; y < b.H; y++ {
@@ -147,7 +188,7 @@ func (b *Buffer) Image(channel Channel) image.Image {
 			case StandardDeviationChannel:
 				c = b.Pixels[y*b.W+x].StandardDeviation()
 			case SamplesChannel:
-				p := float64(b.Pixels[y*b.W+x].Samples) / maxSamples
+				p := float64(b.Pixels[y*b.W+x].color.N) / maxSamples
 				c = Color{p, p, p}
 			case DistanceChannel:
 				// c = Color{float64(x) / 100, float64(x) / 100, float64(x) / 100}
