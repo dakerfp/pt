@@ -15,6 +15,7 @@ const (
 	DistanceChannel
 	NormalChannel
 	AlbedoChannel
+	HitsChannel
 )
 
 type FloatDistribution struct {
@@ -80,6 +81,7 @@ type Pixel struct {
 	albedo ColorDistribution
 	normal VectorDistribution
 	dist   FloatDistribution
+	hits   FloatDistribution
 }
 
 func (p *Pixel) AddSample(sample Color) {
@@ -91,6 +93,11 @@ func (p *Pixel) AddSampleFeature(sample Features) {
 	p.albedo.AddSample(sample.Albedo)
 	p.normal.AddSample(sample.Normal)
 	p.dist.AddSample(sample.Distance)
+	hits := 0.0
+	if sample.Hits {
+		hits = 1.0
+	}
+	p.hits.AddSample(hits)
 }
 
 func (p *Pixel) Color() Color {
@@ -117,6 +124,10 @@ func (p *Pixel) Normal() Color {
 	n := p.normal.M
 	n = n.AddScalar(1.0).DivScalar(2.0)
 	return Color{n.X, n.Y, n.Z}
+}
+
+func (p *Pixel) Hits() float64 {
+	return p.hits.M
 }
 
 type Buffer struct {
@@ -167,12 +178,19 @@ func (b *Buffer) StandardDeviation(x, y int) Color {
 
 func (b *Buffer) Distance(x, y int) Color {
 	d := b.Pixels[y*b.W+x].Distance()
-	d = (d - b.MinDist) / (b.MaxDist - b.MinDist)
-	return Color{d, d, d}
+	return Gray((d - b.MinDist) / (b.MaxDist - b.MinDist))
+}
+
+func (b *Buffer) Hits(x, y int) Color {
+	return Gray(b.Pixels[y*b.W+x].Hits())
 }
 
 func (b *Buffer) Normal(x, y int) Color {
 	return b.Pixels[y*b.W+x].Normal()
+}
+
+func Gray(v float64) Color {
+	return Color{v, v, v}
 }
 
 func (b *Buffer) Image(channel Channel) image.Image {
@@ -194,14 +212,13 @@ func (b *Buffer) Image(channel Channel) image.Image {
 			case StandardDeviationChannel:
 				c = b.Pixels[y*b.W+x].StandardDeviation()
 			case SamplesChannel:
-				p := float64(b.Pixels[y*b.W+x].color.N) / maxSamples
-				c = Color{p, p, p}
+				c = Gray(float64(b.Pixels[y*b.W+x].color.N) / maxSamples)
 			case DistanceChannel:
-				// c = Color{float64(x) / 100, float64(x) / 100, float64(x) / 100}
 				c = b.Distance(x, y)
 			case NormalChannel:
-				// c = Color{float64(x) / 100, float64(x) / 100, float64(x) / 100}
 				c = b.Normal(x, y)
+			case HitsChannel:
+				c = b.Hits(x, y)
 			}
 			result.SetRGBA64(x, y, c.RGBA64())
 		}

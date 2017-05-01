@@ -59,6 +59,7 @@ type Features struct {
 	Albedo   Color
 	Distance float64
 	Normal   Vector
+	Hits     bool
 }
 
 func (s *DefaultSampler) SampleFeature(scene *Scene, ray Ray, rnd *rand.Rand) Features {
@@ -67,11 +68,11 @@ func (s *DefaultSampler) SampleFeature(scene *Scene, ray Ray, rnd *rand.Rand) Fe
 
 func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, depth int, rnd *rand.Rand) Features {
 	if depth > s.MaxBounces {
-		return Features{Black, Black, 0, Vector{}}
+		return Features{Black, Black, 0, Vector{}, false}
 	}
 	hit := scene.Intersect(ray)
 	if !hit.Ok() {
-		return Features{s.sampleEnvironment(scene, ray), Black, 0, Vector{}}
+		return Features{s.sampleEnvironment(scene, ray), Black, 0, Vector{}, hit.Ok()}
 	}
 	info := hit.Info(ray)
 	material := info.Material
@@ -79,7 +80,7 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 	od := hit.Shape.BoundingBox().Center().Z // XXX
 	if material.Emittance > 0 {
 		if s.DirectLighting && !emission {
-			return Features{Black, Black, od, Vector{}}
+			return Features{Black, Black, od, Vector{}, hit.Ok()}
 		}
 		result = result.Add(material.Color.MulScalar(material.Emittance * float64(samples)))
 	}
@@ -119,7 +120,7 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 			}
 		}
 	}
-	return Features{result.DivScalar(float64(n * n)), info.Material.Color, od, info.Normal}
+	return Features{result.DivScalar(float64(n * n)), info.Material.Color, od, info.Normal, hit.Ok()}
 }
 
 func (s *DefaultSampler) sampleEnvironment(scene *Scene, ray Ray) Color {

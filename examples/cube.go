@@ -39,6 +39,6 @@ func main() {
 	sampler := NewSampler(4, 4)
 	// renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
 	// renderer.IterativeRender("out%03d.png", 1000)
-	renderer := NewRenderer(&scene, &camera, sampler, 50, 50)
-	renderer.IterativeRender("cube-out%03d.png", 1)
+	renderer := NewRenderer(&scene, &camera, sampler, 100, 100)
+	renderer.IterativeRender("cube-out%03d.png", 100)
 }
