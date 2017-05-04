@@ -9,6 +9,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kshedden/gonpy"
 )
 
 type Renderer struct {
@@ -180,12 +182,14 @@ func (r *Renderer) IterativeRender(pathTemplate string, iterations int) image.Im
 			path = fmt.Sprintf(pathTemplate, i)
 		}
 		buf := r.Buffer.Copy()
-		wg.Add(5)
+		wg.Add(7)
 		go r.writeImage(path, buf, ColorChannel, &wg)
 		go r.writeImage("dist-"+path, buf, DistanceChannel, &wg)
 		go r.writeImage("norm-"+path, buf, NormalChannel, &wg)
 		go r.writeImage("alb-"+path, buf, AlbedoChannel, &wg)
 		go r.writeImage("hits-"+path, buf, HitsChannel, &wg)
+		go r.writeImage("diff-"+path, buf, DiffuseColorChannel, &wg)
+		go writeNPY("npy-"+path+".npy", buf, &wg)
 		// wg.Add(1)
 		// go r.writeImage("deviation.png", buf, StandardDeviationChannel, &wg)
 		// wg.Add(1)
@@ -224,4 +228,12 @@ func (r *Renderer) TimedRender(duration time.Duration) image.Image {
 		}
 	}
 	return r.Buffer.Image(ColorChannel)
+}
+
+func writeNPY(path string, buf *Buffer, wg *sync.WaitGroup) error {
+    defer wg.Done()
+    shape, data := buf.Raw()
+    wtr, _ := gonpy.NewFileWriter(path)
+    wtr.Shape = shape
+    return wtr.WriteFloat64(data)
 }

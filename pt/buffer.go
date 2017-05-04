@@ -16,14 +16,16 @@ const (
 	NormalChannel
 	AlbedoChannel
 	HitsChannel
+	DiffuseColorChannel
 )
 
 type Pixel struct {
-	color  ColorDistribution
-	albedo ColorDistribution
-	normal VectorDistribution
-	dist   FloatDistribution
-	hits   FloatDistribution
+	color    ColorDistribution
+	albedo   ColorDistribution
+	normal   VectorDistribution
+	dist     FloatDistribution
+	hits     FloatDistribution
+	diffusecolor ColorDistribution
 }
 
 func (p *Pixel) AddSample(sample Color) {
@@ -68,6 +70,22 @@ func (p *Pixel) Normal() Color {
 	return Color{n.X, n.Y, n.Z}
 }
 
+func (p *Pixel) Raw() []float64 {
+	return []float64{
+		// Primary features
+		p.color.M.R,
+		p.color.M.G,
+		p.color.M.B,
+		p.normal.M.X,
+		p.normal.M.Y,
+		p.normal.M.Z,
+		p.dist.M,
+		p.albedo.M.R,
+		p.albedo.M.G,
+		p.albedo.M.B,
+	}
+}
+
 func (p *Pixel) Hits() float64 {
 	return p.hits.M
 }
@@ -100,6 +118,10 @@ func (b *Buffer) AddSampleFeature(x, y int, sample Features) {
 	b.Pixels[y*b.W+x].AddSampleFeature(sample)
 	b.MaxDist = math.Max(b.MaxDist, sample.Distance)
 	b.MinDist = math.Min(b.MinDist, sample.Distance)
+}
+
+func (b *Buffer) Pixel(x, y int) Pixel {
+	return b.Pixels[y*b.W+x]
 }
 
 func (b *Buffer) Samples(x, y int) int {
@@ -161,9 +183,27 @@ func (b *Buffer) Image(channel Channel) image.Image {
 				c = b.Normal(x, y)
 			case HitsChannel:
 				c = b.Hits(x, y)
+			case DiffuseColorChannel:
+				c = b.Hits(x, y)
 			}
 			result.SetRGBA64(x, y, c.RGBA64())
 		}
 	}
 	return result
+}
+
+const FeatureRawSize = 10
+
+func (b *Buffer) Raw() ([]int, []float64) {
+	shape := []int{b.H, b.W, FeatureRawSize}
+    result := make([]float64, FeatureRawSize * b.W * b.H)
+    i := 0
+    for y := 0; y < b.H; y++ {
+        for x := 0; x < b.W; x++ {
+        	p := b.Pixel(x,y)
+            copy(result[i:i+FeatureRawSize], p.Raw())
+            i += FeatureRawSize
+        }
+    }
+    return shape, result
 }
