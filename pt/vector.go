@@ -162,3 +162,7 @@ func (n Vector) Reflectance(i Vector, n1, n2 float64) float64 {
 	rPar := (n2*cosI - n1*cosT) / (n2*cosI + n1*cosT)
 	return (rOrth*rOrth + rPar*rPar) / 2
 }
+
+func VecDist(a, b Vector) float64 {
+	return a.Sub(b).Length()
+}

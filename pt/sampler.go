@@ -78,10 +78,10 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 	info := hit.Info(ray)
 	material := info.Material
 	result := Black
-	od := hit.Shape.BoundingBox().Center().Z // XXX
+	dist := VecDist(info.Position, ray.Origin)
 	if material.Emittance > 0 {
 		if s.DirectLighting && !emission {
-			return Features{Black, Black, od, Vector{}, hit.Ok(), material}
+			return Features{Black, Black, dist, Vector{}, hit.Ok(), material}
 		}
 		result = result.Add(material.Color.MulScalar(material.Emittance * float64(samples)))
 	}
@@ -121,7 +121,7 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 			}
 		}
 	}
-	return Features{result.DivScalar(float64(n * n)), info.Material.Color, od, info.Normal, hit.Ok(), material}
+	return Features{result.DivScalar(float64(n * n)), info.Material.Color, dist, info.Normal, hit.Ok(), material}
 }
 
 func (s *DefaultSampler) sampleEnvironment(scene *Scene, ray Ray) Color {
