@@ -17,6 +17,13 @@ func (fd *FloatDistribution) AddSample(v float64) {
 	fd.V = fd.V + (v-m)*(v-fd.M)
 }
 
+func (p *FloatDistribution) Variance() float64 {
+	if p.N < 2 {
+		return 0
+	}
+	return p.V / float64(p.N - 1)
+}
+
 type ColorDistribution struct {
 	M, V Color
 	N    int
@@ -57,3 +64,11 @@ func (p *VectorDistribution) AddSample(v Vector) {
 	p.M = p.M.Add(v.Sub(p.M).DivScalar(float64(p.N)))
 	p.V = p.V.Add(v.Sub(m).Mul(v.Sub(p.M)))
 }
+
+func (p *VectorDistribution) Variance() Vector {
+	if p.N < 2 {
+		return Vector{}
+	}
+	return p.V.DivScalar(float64(p.N - 1))
+}
+

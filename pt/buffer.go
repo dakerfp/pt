@@ -70,7 +70,12 @@ func (p *Pixel) Normal() Color {
 	return Color{n.X, n.Y, n.Z}
 }
 
+const FeatureRawSize = 17
+
 func (p *Pixel) Raw() []float64 {
+	colVar := p.color.Variance()
+	normVar := p.normal.Variance()
+	distVar := p.dist.Variance()
 	return []float64{
 		// Primary features
 		p.color.M.R,
@@ -83,6 +88,14 @@ func (p *Pixel) Raw() []float64 {
 		p.albedo.M.R,
 		p.albedo.M.G,
 		p.albedo.M.B,
+		// Secondary features
+		colVar.R,
+		colVar.G,
+		colVar.B,
+		normVar.X,
+		normVar.Y,
+		normVar.Z,
+		distVar,
 	}
 }
 
@@ -191,8 +204,6 @@ func (b *Buffer) Image(channel Channel) image.Image {
 	}
 	return result
 }
-
-const FeatureRawSize = 10
 
 func (b *Buffer) Raw() ([]int, []float64) {
 	shape := []int{b.H, b.W, FeatureRawSize}
