@@ -246,9 +246,9 @@ func (r *Renderer) TimedRender(duration time.Duration) image.Image {
 }
 
 func writeNPY(path string, buf *Buffer, wg *sync.WaitGroup) error {
-    defer wg.Done()
-    shape, data := buf.Raw()
-    wtr, _ := gonpy.NewFileWriter(path)
-    wtr.Shape = shape
-    return wtr.WriteFloat64(data)
+	defer wg.Done()
+	shape, data := buf.Raw()
+	wtr, _ := gonpy.NewFileWriter(path)
+	wtr.Shape = shape
+	return wtr.WriteFloat64(data)
 }
