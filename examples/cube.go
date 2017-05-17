@@ -1,11 +1,14 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"math/rand"
 
 	. "github.com/fogleman/pt/pt"
 )
+
+var pathTemplate = flag.String("path", "cube-%03d.npy", "")
 
 func createMesh(material Material) Shape {
 	mesh, err := LoadSTL("examples/cube.stl", material)
@@ -17,6 +20,7 @@ func createMesh(material Material) Shape {
 }
 
 func main() {
+	flag.Parse()
 	scene := Scene{}
 	meshes := []Shape{
 		createMesh(GlossyMaterial(HexColor(0x3B596A), 1.5, Radians(20))),
@@ -37,8 +41,7 @@ func main() {
 	scene.Add(NewSphere(Vector{8, 10, 0}, 3, LightMaterial(White, 30)))
 	camera := LookAt(Vector{-10, 10, 0}, Vector{-2, 0, 0}, Vector{0, 1, 0}, 45)
 	sampler := NewSampler(4, 4)
-	// renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
-	// renderer.IterativeRender("out%03d.png", 1000)
-	renderer := NewRenderer(&scene, &camera, sampler, 100, 100)
-	renderer.IterativeRender("cube-out%03d.png", 100)
+	renderer := NewRenderer(&scene, &camera, sampler, 500, 300)
+	// renderer.IterativeRender("cube-out%03d.png", 100)
+	renderer.ExportFeatures(*pathTemplate, 1024)
 }

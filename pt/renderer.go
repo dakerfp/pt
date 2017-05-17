@@ -185,13 +185,33 @@ func (r *Renderer) IterativeRender(pathTemplate string, iterations int) image.Im
 		wg.Add(2)
 		go r.writeImage(path, buf, ColorChannel, &wg)
 		go writeNPY("npy-"+path[:len(path)-4]+".npy", buf, &wg)
-		// wg.Add(1)
-		// go r.writeImage("deviation.png", buf, StandardDeviationChannel, &wg)
-		// wg.Add(1)
-		// go r.writeImage("samples.png", buf, SamplesChannel, &wg)
 	}
 	wg.Wait()
 	return r.Buffer.Image(ColorChannel)
+}
+
+func isPow2(x int) bool {
+	return (x & ^(x - 1)) == x
+}
+
+func (r *Renderer) ExportFeatures(pathTemplate string, iterations int) {
+	var wg sync.WaitGroup
+	for i := 0; i < iterations; i++ {
+		r.printf("\n[Iteration %d of %d]\n", i, iterations)
+		r.run()
+		if i > 32 && !isPow2(i) {
+			continue
+		}
+
+		path := pathTemplate
+		if strings.Contains(path, "%") {
+			path = fmt.Sprintf(pathTemplate, i)
+		}
+		buf := r.Buffer.Copy()
+		wg.Add(1)
+		go writeNPY(path, buf, &wg)
+	}
+	wg.Wait()
 }
 
 func (r *Renderer) ChannelRender() <-chan image.Image {
