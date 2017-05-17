@@ -71,6 +71,7 @@ if __name__ == '__main__':
     x, y_, y, train_step = create_network()
     sess.run(tf.global_variables_initializer())
 
-    dataset = create_batches.Dataset(sys.argv[1:], kernel_size=11)
+    npys = zip(sys.argv[1::2], sys.argv[2::2])
+    dataset = create_batches.Dataset(npys, kernel_size=11)
     run_epoch(train_step, dataset)
 

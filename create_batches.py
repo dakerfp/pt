@@ -4,8 +4,9 @@ import numpy as np
 
 
 class Scene(object):
-	def __init__(self, filename, kernel_size=11):
+	def __init__(self, filename, gt, kernel_size=11):
 		self.arr = np.load(filename)
+		self.gt = np.load(gt)
 		self.kernel_size = kernel_size
 
 	def next(self):
@@ -17,8 +18,8 @@ class Scene(object):
 
 
 class Dataset(object):
-	def __init__(self, filenames, kernel_size=11):
-		self.scenes = [Scene(fn, kernel_size) for fn in filenames]
+	def __init__(self, filetuples, kernel_size=11):
+		self.scenes = [Scene(fn, gt, kernel_size) for (fn, gt) in filetuples]
 
 	def next(self):
 		s = random.choice(self.scenes)
@@ -32,9 +33,8 @@ if __name__ == '__main__':
 	import matplotlib.pyplot as plt
 	import sys
 
-	npys = sys.argv[1:]
-
-	dset = Dataset(sys.argv[1:], 25)
+	npys = zip(sys.argv[1::2], sys.argv[2::2])
+	dset = Dataset(npys, 25)
 
 	fig = plt.figure()
 	for i in range(1,11):
