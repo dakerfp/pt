@@ -9,11 +9,11 @@ class Scene(object):
 		self.kernel_size = kernel_size
 
 	def next(self):
-		w, h, d = self.arr.shape
+		h, w, d = self.arr.shape
 		k = self.kernel_size
 		x = random.randint(0, w - k - 1)
 		y = random.randint(0, h - k - 1)
-		return self.arr[y:y+k,x:x+k,:]
+		return self.arr[y:y+k,x:x+k,:], self.arr[y+k/2,x+k/2,:3]
 
 
 class Dataset(object):
@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
 	fig = plt.figure()
 	for i in range(1,11):
-		arr = dset.next()
+		arr, _ = dset.next()
 		col = arr[:,:,:3]
 		col = 255 * np.clip(col, 0, 1.0)
 		print(arr.shape)

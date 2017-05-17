@@ -59,15 +59,18 @@ def create_network(width=11, feat_size=17):
 
     return x, y_, y, train_step
 
+def run_epoch(train_step, dataset, epoch_size=100):
+    for _ in range(epoch_size):
+        sample, label = dataset.next()
+        train_step.run(feed_dict={x: sample, y_: label})
+
+
 if __name__ == '__main__':
     import sys
     sess = tf.InteractiveSession()
     x, y_, y, train_step = create_network()
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
     dataset = create_batches.Dataset(sys.argv[1:], kernel_size=11)
-    for i in range(100):
-        sample = dataset.next()
-        train_step.run(feed_dict={x: sample, y_: sample[11/2,11/2,:3]})
-
+    run_epoch(train_step, dataset)
 
