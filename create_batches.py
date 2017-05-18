@@ -16,6 +16,17 @@ class Scene(object):
 		y = random.randint(0, h - k - 1)
 		return self.arr[y:y+k,x:x+k,:], self.arr[y+k/2,x+k/2,:3]
 
+	def windows(self):
+		h, w, d = self.arr.shape
+		k = self.kernel_size
+		return [[self.arr[y:y+k,x:x+k,:] for x in range(w-k)]
+			for y in range(h-k)]
+
+	def color(self):
+		return self.arr[:,:,:3]
+
+	def gt_color(self):
+		return self.gt[:,:,:3]
 
 class Dataset(object):
 	def __init__(self, filetuples, kernel_size=11):
