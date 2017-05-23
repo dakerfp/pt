@@ -26,7 +26,8 @@ class Scene(object):
 		return self.arr[:,:,:3]
 
 	def gt_color(self):
-		return self.gt[:,:,:3]
+		col = self.gt[:,:,:3]
+		return np.clip(col, 0, 1)
 
 class Dataset(object):
 	def __init__(self, filetuples, kernel_size=11):
