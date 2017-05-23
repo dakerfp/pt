@@ -8,7 +8,7 @@ import (
 	. "github.com/fogleman/pt/pt"
 )
 
-var pathTemplate = flag.String("path", "cube-%03d.npy", "")
+var pathTemplate = flag.String("path", "cube-%04d.npy", "")
 
 func createMesh(material Material) Shape {
 	mesh, err := LoadSTL("examples/cube.stl", material)

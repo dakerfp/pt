@@ -1,10 +1,13 @@
 package main
 
 import (
+	"flag"
 	"log"
 
 	. "github.com/fogleman/pt/pt"
 )
+
+var pathTemplate = flag.String("path", "cylinder-%04d.npy", "")
 
 func createMesh(material Material) Shape {
 	mesh, err := LoadSTL("examples/cylinder.stl", material)
@@ -38,5 +41,6 @@ func main() {
 	camera := LookAt(Vector{-5, 0, 5}, Vector{1, 0, 0}, Vector{0, 0, 1}, 45)
 	sampler := NewSampler(4, 4)
 	renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
-	renderer.IterativeRender("out%03d.png", 1000)
+	// renderer.IterativeRender("out%03d.png", 1000)
+	renderer.ExportFeatures(*pathTemplate, 1024)
 }

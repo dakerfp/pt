@@ -2,7 +2,12 @@ package main
 
 // http://graphics.cs.williams.edu/data/meshes/dabrovic-sponza.zip
 
-import . "github.com/fogleman/pt/pt"
+import (
+	"flag"
+	. "github.com/fogleman/pt/pt"
+)
+
+var pathTemplate = flag.String("path", "sponza-%04d.npy", "")
 
 func main() {
 	scene := Scene{}
@@ -17,7 +22,7 @@ func main() {
 	camera := LookAt(Vector{-10, 2, 0}, Vector{0, 4, 0}, Vector{0, 1, 0}, 45)
 	sampler := NewSampler(4, 4)
 	// renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
-	// renderer.IterativeRender("out%03d.png", 1000)
-	renderer := NewRenderer(&scene, &camera, sampler, 300, 300)
-	renderer.IterativeRender("sponza-out%03d.png", 3)
+	renderer := NewRenderer(&scene, &camera, sampler, 400, 300)
+	// renderer.IterativeRender("sponza-out%03d.png", 50)
+	renderer.ExportFeatures(*pathTemplate, 1024)
 }
