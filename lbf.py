@@ -54,16 +54,29 @@ def create_network(width=11, feat_size=17):
     y_ = tf.placeholder(tf.float32, [3])
     w = network(x, feat_size=feat_size, window_width=width)
     y = bilateral_filter_window(x[:,:,:3], w)
-    mse = tf.reduce_sum(tf.square(y - y_))
-    train_step = tf.train.AdamOptimizer(1e-4).minimize(mse)
+    # mse = tf.reduce_sum(tf.square(y - y_))
+    eps = tf.constant(1e-8)
+    relmse = tf.clip_by_value(tf.reduce_sum(tf.square(y - y_)/(tf.square(y_) + eps)), 0.0, 1.0)
+    train_step = tf.train.AdamOptimizer(1e-4).minimize(relmse)
 
-    return x, y_, y, train_step
+    return x, y_, y, train_step, relmse
 
 def run_epoch(train_step, dataset, epoch_size=100):
     for _ in range(epoch_size):
         sample, label = dataset.next()
         train_step.run(feed_dict={x: sample, y_: label})
 
+def test_model(err, dataset, instances=10):
+    errsum = 0
+    for _ in range(instances):
+        sample, label = dataset.next()
+        errsum += err.eval(feed_dict={x: sample, y_: label})
+    return errsum / instances
+
+
+def filter_scene(y, scene):
+    wins = scene.windows()
+    return np.array([[y.eval(feed_dict={x: w}) for w in row] for row in wins])
 
 if __name__ == '__main__':
     import sys
