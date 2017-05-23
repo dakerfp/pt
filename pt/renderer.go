@@ -196,7 +196,7 @@ func isPow2(x int) bool {
 
 func (r *Renderer) ExportFeatures(pathTemplate string, iterations int) {
 	var wg sync.WaitGroup
-	for i := 0; i < iterations; i++ {
+	for i := 1; i <= iterations; i++ {
 		r.printf("\n[Iteration %d of %d]\n", i, iterations)
 		r.run()
 		if i > 32 && !isPow2(i) {
@@ -211,6 +211,8 @@ func (r *Renderer) ExportFeatures(pathTemplate string, iterations int) {
 		wg.Add(1)
 		go writeNPY(path, buf, &wg)
 	}
+	wg.Add(1)
+	r.writeImage(pathTemplate+".png", r.Buffer, ColorChannel, &wg)
 	wg.Wait()
 }
 

@@ -20,11 +20,11 @@ const (
 )
 
 type Pixel struct {
-	color    ColorDistribution
-	albedo   ColorDistribution
-	normal   VectorDistribution
-	dist     FloatDistribution
-	hits     FloatDistribution
+	color        ColorDistribution
+	albedo       ColorDistribution
+	normal       VectorDistribution
+	dist         FloatDistribution
+	hits         FloatDistribution
 	diffusecolor ColorDistribution
 }
 
@@ -70,12 +70,13 @@ func (p *Pixel) Normal() Color {
 	return Color{n.X, n.Y, n.Z}
 }
 
-const FeatureRawSize = 17
+const FeatureRawSize = 20
 
 func (p *Pixel) Raw() []float64 {
 	colVar := p.color.Variance()
 	normVar := p.normal.Variance()
 	distVar := p.dist.Variance()
+	gamma := p.color.M.Pow(1 / 2.2)
 	return []float64{
 		// Primary features
 		p.color.M.R,
@@ -96,6 +97,10 @@ func (p *Pixel) Raw() []float64 {
 		normVar.Y,
 		normVar.Z,
 		distVar,
+		// Tail
+		gamma.R,
+		gamma.G,
+		gamma.B,
 	}
 }
 
@@ -207,14 +212,14 @@ func (b *Buffer) Image(channel Channel) image.Image {
 
 func (b *Buffer) Raw() ([]int, []float64) {
 	shape := []int{b.H, b.W, FeatureRawSize}
-    result := make([]float64, FeatureRawSize * b.W * b.H)
-    i := 0
-    for y := 0; y < b.H; y++ {
-        for x := 0; x < b.W; x++ {
-        	p := b.Pixel(x,y)
-            copy(result[i:i+FeatureRawSize], p.Raw())
-            i += FeatureRawSize
-        }
-    }
-    return shape, result
+	result := make([]float64, FeatureRawSize*b.W*b.H)
+	i := 0
+	for y := 0; y < b.H; y++ {
+		for x := 0; x < b.W; x++ {
+			p := b.Pixel(x, y)
+			copy(result[i:i+FeatureRawSize], p.Raw())
+			i += FeatureRawSize
+		}
+	}
+	return shape, result
 }

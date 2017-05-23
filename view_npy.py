@@ -32,4 +32,7 @@ fig.add_subplot(4,3,6)
 plt.imshow(norm_var)
 fig.add_subplot(4,3,7)
 plt.imshow(dist_var)
+fig.add_subplot(4,3,8)
+plt.imshow(np.clip(col ** (1 / 2.2), 0, 255))
 plt.show()
+
