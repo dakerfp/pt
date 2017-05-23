@@ -28,13 +28,13 @@ def create_network(width=11, feat_size=17):
         input_size = prod(shape(x))
         output_size = window_width * window_width * 3
 
-        w_conv1 = tf.Variable(tf.random_uniform((input_size, 32)))
-        b_conv1 = tf.Variable(tf.random_uniform((32,)))
+        w_conv1 = tf.Variable(tf.random_uniform((input_size, input_size)))
+        b_conv1 = tf.Variable(tf.random_uniform((input_size,)))
 
-        w_conv2 = tf.Variable(tf.random_uniform((32, 32)))
-        b_conv2 = tf.Variable(tf.random_uniform((32,)))
+        w_conv2 = tf.Variable(tf.random_uniform((input_size, input_size)))
+        b_conv2 = tf.Variable(tf.random_uniform((input_size,)))
 
-        w_conv3 = tf.Variable(tf.random_uniform((32, output_size)))
+        w_conv3 = tf.Variable(tf.random_uniform((input_size, output_size)))
         b_conv3 = tf.Variable(tf.random_uniform((output_size,)))
 
         flat_x = tf.reshape(x, shape=(1, input_size))
@@ -52,7 +52,7 @@ def create_network(width=11, feat_size=17):
 
     x = tf.placeholder(tf.float32, [width, width, feat_size])
     y_ = tf.placeholder(tf.float32, [3])
-    w = network(x, feat_size=feat_size, window_width=11)
+    w = network(x, feat_size=feat_size, window_width=width)
     y = bilateral_filter_window(x[:,:,:3], w)
     mse = tf.reduce_sum(tf.square(y - y_))
     train_step = tf.train.AdamOptimizer(1e-4).minimize(mse)
