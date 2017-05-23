@@ -81,10 +81,38 @@ def filter_scene(y, scene):
 if __name__ == '__main__':
     import sys
     sess = tf.InteractiveSession()
-    x, y_, y, train_step = create_network()
+    x, y_, y, train_step, err = create_network(width=5,feat_size=20)
     sess.run(tf.global_variables_initializer())
 
     npys = zip(sys.argv[1::2], sys.argv[2::2])
-    dataset = create_batches.Dataset(npys, kernel_size=11)
-    run_epoch(train_step, dataset)
+    dataset = create_batches.Dataset(npys, kernel_size=5)
+    errs = []
+    for epoch in range(1000):
+        run_epoch(train_step, dataset)
+        e = test_model(err, dataset)
+        print("epoch:", epoch, e)
+        errs.append(e)
+
+    import matplotlib.pyplot as plt
+    fig = plt.figure()
+    smooth = lambda xs, w: [sum(xs[i:i+w]) / w for i in range(len(xs)-w)]
+    fig.add_subplot(2,2,1)
+    # plt.plot(errs)
+    plt.plot(smooth(errs, 20))
+    plt.plot(smooth(errs, 100))
+    plt.plot(smooth(errs, 500))
+    plt.plot(smooth(errs, 1000))
+    scene = dataset.scenes[1]
+    img = filter_scene(y, scene)
+    fig.add_subplot(2,2,2)
+    plt.imshow(np.clip(img, 0, 1))
+    fig.add_subplot(2,2,3)
+    plt.imshow(np.clip(scene.color(), 0, 1))
+    fig.add_subplot(2,2,4)
+    plt.imshow(np.clip(scene.gt_color(), 0, 1))
+    plt.show()
+
+
+
+
 
