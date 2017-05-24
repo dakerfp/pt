@@ -1,8 +1,8 @@
 package pt
 
 type FloatDistribution struct {
-	M, V float64
-	N    int
+	Acc, M, V float64
+	N         int
 }
 
 func (fd *FloatDistribution) AddSample(v float64) {
@@ -17,11 +17,15 @@ func (fd *FloatDistribution) AddSample(v float64) {
 	fd.V = fd.V + (v-m)*(v-fd.M)
 }
 
-func (p *FloatDistribution) Variance() float64 {
-	if p.N < 2 {
+func (fd *FloatDistribution) Avg() float64 {
+	return fd.M
+}
+
+func (fd *FloatDistribution) Variance() float64 {
+	if fd.N < 2 {
 		return 0
 	}
-	return p.V / float64(p.N - 1)
+	return fd.V / float64(fd.N-1)
 }
 
 type ColorDistribution struct {
@@ -41,11 +45,15 @@ func (p *ColorDistribution) AddSample(v Color) {
 	p.V = p.V.Add(v.Sub(m).Mul(v.Sub(p.M)))
 }
 
-func (p *ColorDistribution) Variance() Color {
-	if p.N < 2 {
+func (cd *ColorDistribution) Avg() Color {
+	return cd.M
+}
+
+func (cd *ColorDistribution) Variance() Color {
+	if cd.N < 2 {
 		return Black
 	}
-	return p.V.DivScalar(float64(p.N - 1))
+	return cd.V.DivScalar(float64(cd.N - 1))
 }
 
 type VectorDistribution struct {
@@ -65,10 +73,13 @@ func (p *VectorDistribution) AddSample(v Vector) {
 	p.V = p.V.Add(v.Sub(m).Mul(v.Sub(p.M)))
 }
 
+func (vd *VectorDistribution) Avg() Vector {
+	return vd.M
+}
+
 func (p *VectorDistribution) Variance() Vector {
 	if p.N < 2 {
 		return Vector{}
 	}
 	return p.V.DivScalar(float64(p.N - 1))
 }
-

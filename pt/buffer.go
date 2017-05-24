@@ -73,22 +73,25 @@ func (p *Pixel) Normal() Color {
 const FeatureRawSize = 20
 
 func (p *Pixel) Raw() []float64 {
+	col := p.color.Avg()
+	norm := p.normal.Avg()
+	albedo := p.albedo.Avg()
 	colVar := p.color.Variance()
 	normVar := p.normal.Variance()
 	distVar := p.dist.Variance()
-	gamma := p.color.M.Pow(1 / 2.2)
+	gamma := col.Pow(1 / 2.2)
 	return []float64{
 		// Primary features
-		p.color.M.R,
-		p.color.M.G,
-		p.color.M.B,
-		p.normal.M.X,
-		p.normal.M.Y,
-		p.normal.M.Z,
-		p.dist.M,
-		p.albedo.M.R,
-		p.albedo.M.G,
-		p.albedo.M.B,
+		col.R,
+		col.G,
+		col.B,
+		norm.X,
+		norm.Y,
+		norm.Z,
+		p.dist.Avg(),
+		albedo.R,
+		albedo.G,
+		albedo.B,
 		// Secondary features
 		colVar.R,
 		colVar.G,
