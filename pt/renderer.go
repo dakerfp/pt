@@ -121,11 +121,6 @@ func (r *Renderer) run() {
 		}(i)
 	}
 	wg.Wait()
-	// r.showProgress(start, scene.RayCount(), 0, h)
-	// for i := 0; i < h; i++ {
-	// 	<-ch
-	// 	r.showProgress(start, scene.RayCount(), i+1, h)
-	// }
 	r.printf("\n")
 }
 
