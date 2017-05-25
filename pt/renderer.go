@@ -29,13 +29,13 @@ type Renderer struct {
 	Verbose            bool
 }
 
-func NewRenderer(scene *Scene, camera *Camera, sampler Sampler, w, h int) *Renderer {
+func NewRenderer(scene *Scene, camera *Camera, sampler Sampler, w, h, spp int) *Renderer {
 	r := Renderer{}
 	r.Scene = scene
 	r.Camera = camera
 	r.Sampler = sampler
 	r.Buffer = NewBuffer(w, h)
-	r.SamplesPerPixel = 1
+	r.SamplesPerPixel = spp
 	r.StratifiedSampling = false
 	r.AdaptiveSamples = 0
 	r.AdaptiveThreshold = 1

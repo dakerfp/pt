@@ -1,8 +1,19 @@
 package main
 
-import . "github.com/fogleman/pt/pt"
+import (
+	"flag"
+	. "github.com/fogleman/pt/pt"
+)
+
+var width = flag.Int("w", 500, "width")
+var height = flag.Int("h", 300, "height")
+var spp = flag.Int("spp", 1, "spp")
+var interactions = flag.Int("interactions", 1024, "interactions")
+var pathTemplate = flag.String("path", "sdf-%04d.npy", "")
 
 func main() {
+	flag.Parse()
+
 	scene := Scene{}
 
 	light := LightMaterial(White, 180)
@@ -30,6 +41,8 @@ func main() {
 	sampler := NewSampler(4, 4)
 	sampler.LightMode = LightModeAll
 	sampler.SpecularMode = SpecularModeAll
-	renderer := NewRenderer(&scene, &camera, sampler, 1600, 1600)
-	renderer.IterativeRender("out%03d.png", 1000)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
+	
+	//renderer.IterativeRender("out%03d.png", 1000)
+	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

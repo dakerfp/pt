@@ -8,9 +8,10 @@ import (
 	. "github.com/fogleman/pt/pt"
 )
 
-var width = flag.Int("w", 500, "")
-var height = flag.Int("h", 300, "")
-var spp = flag.Int("spp", 1024, "")
+var width = flag.Int("w", 500, "width")
+var height = flag.Int("h", 300, "height")
+var spp = flag.Int("spp", 1, "spp")
+var interactions = flag.Int("interactions", 1024, "interactions")
 var pathTemplate = flag.String("path", "cube-%04d.npy", "")
 
 func createMesh(material Material) Shape {
@@ -44,7 +45,7 @@ func main() {
 	scene.Add(NewSphere(Vector{8, 10, 0}, 3, LightMaterial(White, 30)))
 	camera := LookAt(Vector{-10, 10, 0}, Vector{-2, 0, 0}, Vector{0, 1, 0}, 45)
 	sampler := NewSampler(4, 4)
-	renderer := NewRenderer(&scene, &camera, sampler, *width, *height)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
 	// renderer.IterativeRender("cube-out%03d.png", 100)
-	renderer.ExportFeatures(*pathTemplate, *spp)
+	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

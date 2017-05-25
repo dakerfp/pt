@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"encoding/csv"
 	"math/rand"
 	"os"
@@ -9,6 +10,11 @@ import (
 	. "github.com/fogleman/pt/pt"
 	colorful "github.com/lucasb-eyer/go-colorful"
 )
+
+var width = flag.Int("w", 500, "")
+var height = flag.Int("h", 300, "")
+var spp = flag.Int("spp", 1024, "")
+var pathTemplate = flag.String("path", "counties-%04d.npy", "")
 
 func NewMaterial() Material {
 	p := rand.Float64()
@@ -71,6 +77,8 @@ func main() {
 	scene.Add(NewSphere(V(0, 4, 10), 4, light))
 	camera := LookAt(V(0, -0.25, 2), V(0, 0, 0), V(0, 0, 1), 35)
 	sampler := NewSampler(4, 4)
-	renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
-	renderer.IterativeRender("out%03d.png", 1000)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height)
+
+	//renderer.IterativeRender("out%03d.png", 1000)
+	renderer.ExportFeatures(*pathTemplate, *spp)
 }

@@ -1,11 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"sync"
 
 	. "github.com/fogleman/pt/pt"
 )
+
+var width = flag.Int("w", 500, "width")
+var height = flag.Int("h", 300, "height")
+var spp = flag.Int("spp", 1, "spp")
+var interactions = flag.Int("interactions", 1024, "interactions")
+var pathTemplate = flag.String("path", "sh-%04d.npy", "")
 
 func render(l, m int) {
 	scene := Scene{}

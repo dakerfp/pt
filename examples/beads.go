@@ -1,12 +1,18 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math"
 	"math/rand"
 
 	. "github.com/fogleman/pt/pt"
 )
+
+var width = flag.Int("w", 500, "")
+var height = flag.Int("h", 300, "")
+var spp = flag.Int("spp", 1024, "")
+var pathTemplate = flag.String("path", "breads-%04d.npy", "")
 
 func frame(path string, t float64) {
 	materials := []Material{

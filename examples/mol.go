@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"strconv"
@@ -8,6 +9,12 @@ import (
 	"github.com/fogleman/mol/mol"
 	. "github.com/fogleman/pt/pt"
 )
+
+var width = flag.Int("w", 500, "width")
+var height = flag.Int("h", 300, "height")
+var spp = flag.Int("spp", 1, "spp")
+var interactions = flag.Int("interactions", 1024, "interactions")
+var pathTemplate = flag.String("path", "hits-%04d.npy", "")
 
 func GetColor(name string) Color {
 	switch name {
@@ -43,6 +50,7 @@ func GetMaterial(name string) Material {
 }
 
 func main() {
+	flag.Parse()
 	scene := Scene{}
 
 	molecule, err := mol.ParseFile(os.Args[1])
@@ -95,6 +103,8 @@ func main() {
 	camera := LookAt(eye, center, up, cam.Fovy/1.7)
 	sampler := NewSampler(16, 8)
 	sampler.SpecularMode = SpecularModeAll
-	renderer := NewRenderer(&scene, &camera, sampler, 2560, 1440)
-	renderer.IterativeRender("out%03d.png", 1000)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
+	
+	//renderer.IterativeRender("out%03d.png", 1000)
+	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

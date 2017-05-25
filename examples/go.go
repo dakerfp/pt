@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"math"
 	"math/rand"
 
@@ -25,7 +26,14 @@ func intersects(scene *Scene, shape Shape) bool {
 	return false
 }
 
+var width = flag.Int("w", 500, "width")
+var height = flag.Int("h", 300, "height")
+var spp = flag.Int("spp", 1, "spp")
+var interactions = flag.Int("interactions", 1024, "interactions")
+var pathTemplate = flag.String("path", "go-%04d.npy", "")
+
 func main() {
+	flag.Parse()
 	scene := Scene{}
 	scene.Color = White
 	black := GlossyMaterial(HexColor(0x111111), 1.5, Radians(45))
@@ -66,8 +74,10 @@ func main() {
 	scene.Texture = GetTexture("examples/courtyard_ccby/courtyard_8k.png")
 	camera := LookAt(Vector{-0.5, 5, 5}, Vector{-0.5, 0, 0.5}, Vector{0, 1, 0}, 50)
 	sampler := NewSampler(4, 4)
-	renderer := NewRenderer(&scene, &camera, sampler, 2560/2, 1440/2)
-	renderer.IterativeRender("out%03d.png", 1000)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
+	
+	//renderer.IterativeRender("out%03d.png", 1000)
+	renderer.ExportFeatures(*pathTemplate, *interactions)
 }
 
 var blackPositions = [][]float64{
