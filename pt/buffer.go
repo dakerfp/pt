@@ -21,11 +21,17 @@ const (
 
 type Pixel struct {
 	color        ColorDistribution
-	albedo       ColorDistribution
 	normal       VectorDistribution
 	dist         FloatDistribution
 	hits         FloatDistribution
-	diffusecolor ColorDistribution
+	albedo       ColorDistribution
+	bump         FloatDistribution
+	emmitance    FloatDistribution
+	index        FloatDistribution
+	gloss        FloatDistribution
+	tint         FloatDistribution
+	reflectivity FloatDistribution
+	transparent  FloatDistribution
 }
 
 func (p *Pixel) AddSample(sample Color) {
@@ -34,7 +40,6 @@ func (p *Pixel) AddSample(sample Color) {
 
 func (p *Pixel) AddSampleFeature(sample Features) {
 	p.color.AddSample(sample.Color)
-	p.albedo.AddSample(sample.Albedo)
 	p.normal.AddSample(sample.Normal)
 	p.dist.AddSample(sample.Distance)
 	hits := 0.0
@@ -42,6 +47,19 @@ func (p *Pixel) AddSampleFeature(sample Features) {
 		hits = 1.0
 	}
 	p.hits.AddSample(hits)
+	mat := sample.Material
+	p.albedo.AddSample(mat.Color)
+	p.bump.AddSample(mat.BumpMultiplier)
+	p.emmitance.AddSample(mat.Emittance)
+	p.index.AddSample(mat.Index)
+	p.gloss.AddSample(mat.Gloss)
+	p.tint.AddSample(mat.Tint)
+	p.reflectivity.AddSample(mat.Reflectivity)
+	transp := 0.0
+	if mat.Transparent {
+		transp = 1.0
+	}
+	p.transparent.AddSample(transp)
 }
 
 func (p *Pixel) Color() Color {
@@ -70,7 +88,7 @@ func (p *Pixel) Normal() Color {
 	return Color{n.X, n.Y, n.Z}
 }
 
-const FeatureRawSize = 20
+const FeatureRawSize = 38
 
 func (p *Pixel) Raw() []float64 {
 	col := p.color.Avg()
@@ -78,6 +96,7 @@ func (p *Pixel) Raw() []float64 {
 	albedo := p.albedo.Avg()
 	colVar := p.color.Variance()
 	normVar := p.normal.Variance()
+	albedoVar := p.albedo.Variance()
 	distVar := p.dist.Variance()
 	gamma := col.Pow(1 / 2.2)
 	return []float64{
@@ -92,6 +111,16 @@ func (p *Pixel) Raw() []float64 {
 		albedo.R,
 		albedo.G,
 		albedo.B,
+		gamma.R,
+		gamma.G,
+		gamma.B,
+		p.bump.Avg(),
+		p.emmitance.Avg(),
+		p.index.Avg(),
+		p.gloss.Avg(),
+		p.tint.Avg(),
+		p.reflectivity.Avg(),
+		p.transparent.Avg(),
 		// Secondary features
 		colVar.R,
 		colVar.G,
@@ -100,10 +129,19 @@ func (p *Pixel) Raw() []float64 {
 		normVar.Y,
 		normVar.Z,
 		distVar,
-		// Tail
-		gamma.R,
-		gamma.G,
-		gamma.B,
+		albedoVar.R,
+		albedoVar.G,
+		albedoVar.B,
+		p.bump.Variance(),
+		p.emmitance.Variance(),
+		p.index.Variance(),
+		p.gloss.Variance(),
+		p.tint.Variance(),
+		p.reflectivity.Variance(),
+		p.transparent.Variance(),
+
+		// Other
+		p.hits.Avg(),
 	}
 }
 
