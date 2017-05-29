@@ -1,6 +1,9 @@
 package main
 
-import . "github.com/fogleman/pt/pt"
+import (
+	"github.com/ojrac/opensimplex-go"
+	. "github.com/fogleman/pt/pt"
+)
 
 func main() {
 	scene := Scene{}
