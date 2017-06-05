@@ -3,13 +3,14 @@ package main
 import (
 	"flag"
 	. "github.com/fogleman/pt/pt"
+	"github.com/ojrac/opensimplex-go"
 )
 
 var width = flag.Int("w", 500, "width")
 var height = flag.Int("h", 300, "height")
 var spp = flag.Int("spp", 1, "spp")
 var interactions = flag.Int("interactions", 1024, "interactions")
-var pathTemplate = flag.String("path", "hits-%04d.npy", "")
+var pathTemplate = flag.String("path", "noise-%04d.npy", "")
 
 func main() {
 	flag.Parse()
