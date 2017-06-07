@@ -5,7 +5,7 @@ import create_batches
 import scipy.stats as st    
 
 
-def create_network(width=11, feat_size=17):
+def create_network(width=11, depth=37):
     def shape(tensor):
         return [d.value for d in tensor.get_shape()]
 
@@ -24,23 +24,23 @@ def create_network(width=11, feat_size=17):
         kernel = kernel_raw/kernel_raw.sum()
         return kernel
 
-    def network(x, feat_size, window_width):
+    def network(x, depth, window_width):
         input_size = prod(shape(x))
         output_size = window_width * window_width * 3
 
-        w_conv1 = tf.Variable(tf.random_uniform((input_size, input_size)))
-        b_conv1 = tf.Variable(tf.random_uniform((input_size,)))
-
-        w_conv2 = tf.Variable(tf.random_uniform((input_size, input_size)))
-        b_conv2 = tf.Variable(tf.random_uniform((input_size,)))
-
-        w_conv3 = tf.Variable(tf.random_uniform((input_size, output_size)))
-        b_conv3 = tf.Variable(tf.random_uniform((output_size,)))
-
         flat_x = tf.reshape(x, shape=(1, input_size))
-        layer1 = tf.sigmoid(tf.matmul(flat_x, w_conv1) + b_conv1)
-        layer2 = tf.sigmoid(tf.matmul(layer1, w_conv2) + b_conv2)
-        layer3 = tf.sigmoid(tf.matmul(layer2, w_conv3) + b_conv3)
+
+        W1 = tf.Variable(tf.random_uniform((input_size, input_size)))
+        b1 = tf.Variable(tf.random_uniform((input_size,)))
+        layer1 = tf.sigmoid(tf.matmul(flat_x, W1) + b1)
+
+        W2 = tf.Variable(tf.random_uniform((input_size, input_size)))
+        b2 = tf.Variable(tf.random_uniform((input_size,)))
+        layer2 = tf.sigmoid(tf.matmul(layer1, W2) + b2)
+
+        W3 = tf.Variable(tf.random_uniform((input_size, output_size)))
+        b3 = tf.Variable(tf.random_uniform((output_size,)))
+        layer3 = tf.sigmoid(tf.matmul(layer2, W3) + b3)
 
         return tf.reshape(layer3, shape=(window_width, window_width, 3))
 
@@ -50,9 +50,9 @@ def create_network(width=11, feat_size=17):
         w = g * w
         return tf.reduce_sum(img * w, (0,1)) / tf.reduce_sum(w)
 
-    x = tf.placeholder(tf.float32, [width, width, feat_size])
+    x = tf.placeholder(tf.float32, [width, width, depth])
     y_ = tf.placeholder(tf.float32, [3])
-    w = network(x, feat_size=feat_size, window_width=width)
+    w = network(x, depth=depth, window_width=width)
     y = bilateral_filter_window(x[:,:,:3], w)
     # mse = tf.reduce_sum(tf.square(y - y_))
     eps = tf.constant(1e-8)
@@ -80,12 +80,15 @@ def filter_scene(y, scene):
 
 if __name__ == '__main__':
     import sys
+    kwidth=11
+    npys = zip(sys.argv[1::2], sys.argv[2::2])
+    dataset = create_batches.Dataset(npys, kernel_size=kwidth)
+    depth = dataset.next()[0].shape[2]
+
     sess = tf.InteractiveSession()
-    x, y_, y, train_step, err = create_network(width=5,feat_size=20)
+    x, y_, y, train_step, err = create_network(width=kwidth,depth=depth)
     sess.run(tf.global_variables_initializer())
 
-    npys = zip(sys.argv[1::2], sys.argv[2::2])
-    dataset = create_batches.Dataset(npys, kernel_size=5)
     errs = []
     for epoch in range(1000):
         run_epoch(train_step, dataset)
