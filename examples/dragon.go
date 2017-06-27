@@ -38,7 +38,7 @@ func main() {
 	camera.SetFocus(Vector{0, 1, -0.5}, 0.03)
 	sampler := NewSampler(4, 8)
 	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
-	
+
 	//renderer.IterativeRender("out%03d.png", 1000)
 	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

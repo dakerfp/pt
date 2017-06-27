@@ -11,7 +11,8 @@ import (
 
 var width = flag.Int("w", 500, "")
 var height = flag.Int("h", 300, "")
-var spp = flag.Int("spp", 1024, "")
+var spp = flag.Int("spp", 1, "")
+var interactions = flag.Int("interactions", 1024, "interactions")
 var pathTemplate = flag.String("path", "breads-%04d.npy", "")
 
 func frame(path string, t float64) {
@@ -51,14 +52,18 @@ func frame(path string, t float64) {
 	camera := LookAt(eye, center, up, fovy)
 	sampler := NewSampler(4, 4)
 	sampler.SpecularMode = SpecularModeFirst
-	renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
-	renderer.IterativeRender("out%03d.png", 1000)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
+	// renderer.IterativeRender("out%03d.png", *interactions)
+	renderer.ExportFeatures(path, *interactions)
 }
 
 func main() {
+	return // IGNORE
+	flag.Parse()
+
 	for i := 0; i < 30; i++ {
 		t := float64(i) / 30
-		path := fmt.Sprintf("out%03d.png", i)
+		path := *pathTemplate + fmt.Sprintf("%03d.npy", i) // XXX
 		fmt.Println(path)
 		frame(path, t)
 	}

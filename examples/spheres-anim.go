@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math"
 	"math/rand"
@@ -8,6 +9,12 @@ import (
 
 	. "github.com/fogleman/pt/pt"
 )
+
+var width = flag.Int("w", 500, "width")
+var height = flag.Int("h", 300, "height")
+var spp = flag.Int("spp", 1, "spp")
+var interactions = flag.Int("interactions", 1024, "interactions")
+var pathTemplate = flag.String("path", "cube-%04d.npy", "")
 
 const (
 	FPS            = 30
@@ -104,11 +111,11 @@ func frame(i int) {
 	sphere(&scene, Vector{}, Vector{}, 1, 0, 7, t)
 	scene.Add(NewSphere(Vector{0, 0, 6}, 0.5, LightMaterial(White, 1)))
 	camera := LookAt(Vector{x, y, 1}, Vector{0, 0, 0}, Vector{0, 0, 1}, 30)
-	template := fmt.Sprintf("out%03d.png", i)
+	template := fmt.Sprintf("%s-%03d-frame.png", *pathTemplate, i)
 	// IterativeRender(template, 1, &scene, &camera, 1920, 1080, 16, 16, 4)
 	sampler := NewSampler(16, 16)
-	renderer := NewRenderer(&scene, &camera, sampler, 960, 540)
-	renderer.IterativeRender("out%03d.png", 1000)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
+	renderer.IterativeRender(template, *interactions)
 }
 
 func easeInOutCubic(t float64) float64 {
@@ -134,6 +141,8 @@ func easeInQuint(t float64) float64 {
 }
 
 func main() {
+	return // IGNORE
+	flag.Parse()
 	for i := 240; i < Frames; i += 1 {
 		frame(i)
 	}

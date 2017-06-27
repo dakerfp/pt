@@ -6,7 +6,7 @@ import (
 )
 
 var width = flag.Int("w", 500, "width")
-var height = flag.Int("h", 300, "height")
+var heightFlag = flag.Int("h", 300, "height")
 var spp = flag.Int("spp", 1, "spp")
 var interactions = flag.Int("interactions", 1024, "interactions")
 var pathTemplate = flag.String("path", "runway-%04d.npy", "")
@@ -64,8 +64,8 @@ func main() {
 	camera.SetFocus(V(0, 20000, 0), 1)
 
 	sampler := NewSampler(4, 4)
-	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
-	
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *heightFlag, *spp)
+
 	//renderer.IterativeRender("out%03d.png", 1000)
 	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"sync"
 
 	. "github.com/fogleman/pt/pt"
 )
@@ -35,15 +34,17 @@ func render(l, m int) {
 	sampler := NewSampler(4, 4)
 	sampler.LightMode = LightModeAll
 	sampler.SpecularMode = SpecularModeFirst
-	renderer := NewRenderer(&scene, &camera, sampler, 1600/2, 1600/2)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
 	renderer.AdaptiveSamples = 32
 	// renderer.IterativeRender("out%03d.png", 1000)
-	var wg sync.WaitGroup
-	renderer.FrameRender(fmt.Sprintf("sh.%d.%d.png", l, m), 10, &wg)
-	wg.Wait()
+	// renderer.FrameRender(fmt.Sprintf("sh.%d.%d.png", l, m), 10, &wg)
+	renderer.ExportFeatures(fmt.Sprintf("%d.%d-", l, m)+*pathTemplate, *interactions)
 }
 
 func main() {
+	return // IGNORE
+	flag.Parse()
+
 	for l := 0; l <= 4; l++ {
 		for m := -l; m <= l; m++ {
 			render(l, m)

@@ -104,7 +104,7 @@ func main() {
 	sampler := NewSampler(16, 8)
 	sampler.SpecularMode = SpecularModeAll
 	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
-	
+
 	//renderer.IterativeRender("out%03d.png", 1000)
 	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

@@ -59,7 +59,7 @@ func (r *Renderer) run() {
 	ncpu := r.NumCPU
 	runtime.GOMAXPROCS(ncpu)
 	scene.Compile()
-	r.printf("%d x %d pixels, %d spp, %d cores\n", w, h, spp, ncpu)
+	// r.printf("%d x %d pixels, %d spp, %d cores\n", w, h, spp, ncpu)
 	// start := time.Now()
 	scene.rays = 0
 	wg.Add(ncpu)
@@ -121,7 +121,7 @@ func (r *Renderer) run() {
 		}(i)
 	}
 	wg.Wait()
-	r.printf("\n")
+	// r.printf("\n")
 }
 
 func (r *Renderer) printf(format string, a ...interface{}) {
@@ -192,11 +192,11 @@ func isPow2(x int) bool {
 func (r *Renderer) ExportFeatures(pathTemplate string, iterations int) {
 	var wg sync.WaitGroup
 	for i := 1; i <= iterations; i++ {
-		r.printf("\n[Iteration %d of %d]\n", i, iterations)
 		r.run()
-		if i > 32 && !isPow2(i) {
+		if i > 16 && !isPow2(i) {
 			continue
 		}
+		r.printf("\n[Iteration %d of %d]\n", i, iterations)
 
 		path := pathTemplate
 		if strings.Contains(path, "%") {
@@ -245,7 +245,10 @@ func (r *Renderer) TimedRender(duration time.Duration) image.Image {
 func writeNPY(path string, buf *Buffer, wg *sync.WaitGroup) error {
 	defer wg.Done()
 	shape, data := buf.Raw()
-	wtr, _ := gonpy.NewFileWriter(path)
+	wtr, err := gonpy.NewFileWriter(path)
+	if err != nil {
+		return err
+	}
 	wtr.Shape = shape
 	return wtr.WriteFloat64(data)
 }

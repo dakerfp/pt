@@ -1,12 +1,14 @@
 
 import random
 import numpy as np
-
+import zipfile
+import io
+import itertools as itt
 
 class Scene(object):
-	def __init__(self, filename, gt, kernel_size=11):
-		self.arr = np.load(filename)
-		self.gt = np.load(gt)
+	def __init__(self, arr, gt, kernel_size=11):
+		self.arr = arr
+		self.gt = gt
 		self.kernel_size = kernel_size
 
 	def next(self):
@@ -31,6 +33,24 @@ class Scene(object):
 
 class Dataset(object):
 	def __init__(self, filetuples, kernel_size=11):
+		self.scenes = [Scene(np.load(fn), np.load(gt), kernel_size) for (fn, gt) in filetuples]
+
+	def next(self):
+		s = random.choice(self.scenes)
+		return s.next()
+
+	def next_batch(self, n):
+		return [self.next() for _ in range(n)]
+
+class ZipDataset(object):
+	def __init__(self, zipfilenames, prefixes=[1], lowres=16, hires=1024, kernel_size=11):
+		def load(zf, prefix, spp):
+			template = '%d-%04d.npy'
+			buff = io.BufferedReader(zf.open(template % (prefix, spp)))
+			return np.load(buff)
+
+		zipfiles = [zipfile.ZipFile(fn) for fn in zipfilenames]
+		filetuples = [(load(zf, pre, lowres), load(zf, pre, hires)) for pre, zf in itt.product(prefixes, zipfiles)]
 		self.scenes = [Scene(fn, gt, kernel_size) for (fn, gt) in filetuples]
 
 	def next(self):
@@ -45,8 +65,12 @@ if __name__ == '__main__':
 	import matplotlib.pyplot as plt
 	import sys
 
-	npys = zip(sys.argv[1::2], sys.argv[2::2])
-	dset = Dataset(npys, 25)
+	dset = None
+	if sys.argv[1].endswith(".zip"):
+		dset = ZipDataset(sys.argv[1:], prefixes=[1, 2, 3, 4, 5, 6])
+	else:
+		npys = zip(sys.argv[1::2], sys.argv[2::2])
+		dset = Dataset(npys, 25)
 
 	fig = plt.figure()
 	for i in range(1,11):

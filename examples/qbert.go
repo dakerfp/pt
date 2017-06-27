@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"math/rand"
+
 	. "github.com/fogleman/pt/pt"
 )
 
@@ -13,7 +15,7 @@ var pathTemplate = flag.String("path", "hits-%04d.npy", "")
 
 func main() {
 	flag.Parse()
-	
+
 	scene := Scene{}
 	floor := GlossyMaterial(HexColor(0xFCFFF5), 1.2, Radians(30))
 	cube := GlossyMaterial(HexColor(0xFF8C00), 1.3, Radians(20))
@@ -38,7 +40,7 @@ func main() {
 	camera := LookAt(V(fn*2, fn*2, fn*2), V(0, 0, fn/4), V(0, 0, 1), 35)
 	sampler := NewSampler(4, 4)
 	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
-	
+
 	//renderer.IterativeRender("out%03d.png", 1000)
 	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

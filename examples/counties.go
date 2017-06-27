@@ -1,8 +1,8 @@
 package main
 
 import (
-	"flag"
 	"encoding/csv"
+	"flag"
 	"math/rand"
 	"os"
 	"strconv"
@@ -13,7 +13,8 @@ import (
 
 var width = flag.Int("w", 500, "")
 var height = flag.Int("h", 300, "")
-var spp = flag.Int("spp", 1024, "")
+var spp = flag.Int("spp", 1, "")
+var interactions = flag.Int("interactions", 1024, "interactions")
 var pathTemplate = flag.String("path", "counties-%04d.npy", "")
 
 func NewMaterial() Material {
@@ -65,6 +66,8 @@ func LoadTriangles(path string) []*Triangle {
 }
 
 func main() {
+	flag.Parse()
+
 	rand.Seed(6)
 	floor := GlossyMaterial(HexColor(0xFCFFF5), 1.5, Radians(20))
 	light := LightMaterial(HexColor(0xFFFFFF), 1)
@@ -77,8 +80,8 @@ func main() {
 	scene.Add(NewSphere(V(0, 4, 10), 4, light))
 	camera := LookAt(V(0, -0.25, 2), V(0, 0, 0), V(0, 0, 1), 35)
 	sampler := NewSampler(4, 4)
-	renderer := NewRenderer(&scene, &camera, sampler, *width, *height)
+	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
 
 	//renderer.IterativeRender("out%03d.png", 1000)
-	renderer.ExportFeatures(*pathTemplate, *spp)
+	renderer.ExportFeatures(*pathTemplate, *interactions)
 }

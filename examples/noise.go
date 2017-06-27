@@ -40,7 +40,7 @@ func main() {
 	camera := LookAt(V(0, 0, -20), V(0, 0, 0), V(0, 1, 0), 30)
 	sampler := NewSampler(4, 4)
 	renderer := NewRenderer(&scene, &camera, sampler, *width, *height, *spp)
-	
+
 	//renderer.IterativeRender("out%03d.png", 1000)
 	renderer.ExportFeatures(*pathTemplate, *interactions)
 }
