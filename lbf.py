@@ -79,10 +79,16 @@ def filter_scene(y, scene):
     return np.array([[y.eval(feed_dict={x: w}) for w in row] for row in wins])
 
 if __name__ == '__main__':
-    import sys
     kwidth=11
-    npys = zip(sys.argv[1::2], sys.argv[2::2])
-    dataset = create_batches.Dataset(npys, kernel_size=kwidth)
+
+    import sys
+    dataset = None
+    if sys.argv[1].endswith(".zip"):
+        dataset = create_batches.ZipDataset(sys.argv[1:], prefixes=[1, 2, 3, 4, 5, 6], lowres=16, hires=1024, kernel_size=kwidth)
+    else:
+        npys = zip(sys.argv[1::2], sys.argv[2::2])
+        dataset = create_batches.Dataset(npys, 25)
+
     depth = dataset.next()[0].shape[2]
 
     sess = tf.InteractiveSession()
