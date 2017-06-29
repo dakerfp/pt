@@ -91,16 +91,20 @@ if __name__ == '__main__':
 
     depth = dataset.next()[0].shape[2]
 
-    sess = tf.InteractiveSession()
     x, y_, y, train_step, err = create_network(width=kwidth,depth=depth)
+    saver = tf.train.Saver()
+
+    sess = tf.InteractiveSession()
     sess.run(tf.global_variables_initializer())
 
     errs = []
-    for epoch in range(1000):
+    for epoch in range(100001):
         run_epoch(train_step, dataset)
         e = test_model(err, dataset)
         print("epoch:", epoch, e)
         errs.append(e)
+        if epoch % 1000 == 0:
+            saver.save(sess, 'lbf-basic', global_step=epoch)
 
     import matplotlib.pyplot as plt
     fig = plt.figure()
