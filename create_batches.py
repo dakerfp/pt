@@ -24,6 +24,19 @@ class Scene(object):
 		return [[self.arr[y:y+k,x:x+k,:] for x in range(w-k)]
 			for y in range(h-k)]
 
+	def flat_windows(self):
+		h, w, d = self.arr.shape
+		k = self.kernel_size
+		return [self.arr[y:y+k,x:x+k,:] for x, y in itt.product(range(w-k),range(h-k))]
+
+	def shape_windows(self):
+		h, w, _ = self.arr.shape
+		k = self.kernel_size
+		return w-k, h-k
+
+	def depth(self):
+		return self.arr.shape[2]
+
 	def color(self):
 		return self.arr[:,:,:3]
 
@@ -42,6 +55,9 @@ class Dataset(object):
 
 	def next_batch(self, n):
 		return [self.next() for _ in range(n)]
+
+	def depth(self):
+		return self.scenes[0].depth()
 
 class ZipDataset(object):
 	def __init__(self, zipfilenames, prefixes=[1], lowres=16, hires=1024, kernel_size=11):
@@ -67,6 +83,12 @@ class ZipDataset(object):
 
 	def next_batch(self, n):
 		return [self.next() for _ in range(n)]
+
+	def depth(self):
+		return self.scenes[0].depth()
+
+	def next_scene(self):
+		return random.choice(self.scenes)
 
 
 if __name__ == '__main__':

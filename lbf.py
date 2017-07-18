@@ -10,49 +10,100 @@ def prod(xs):
             p *= x
     return p
 
-def create_network(width=11, depth=37):
-    def shape(tensor):
-        return [d.value for d in tensor.get_shape()]
+class LearningBasedFilter(object):
 
-    def filter_weights(x, depth, window_width):
-        input_size = prod(shape(x))
-        layer1_size = input_size * 8
-        layer2_size = input_size / 4
-        output_size = window_width * window_width * 3
+    def __init__(self, width=11, depth=37):
+        def shape(tensor):
+            return [d.value for d in tensor.get_shape()]
 
-        W1 = tf.Variable(tf.random_uniform((input_size, layer1_size)))
-        b1 = tf.Variable(tf.random_uniform((layer1_size,)))
-        layer1 = tf.sigmoid(tf.matmul(x, W1) + b1)
+        def filter_weights(x, depth, window_width):
+            input_size = prod(shape(x))
+            layer1_size = input_size * 8
+            layer2_size = input_size / 4
+            output_size = window_width * window_width * 3
 
-        W2 = tf.Variable(tf.random_uniform((layer1_size, layer2_size)))
-        b2 = tf.Variable(tf.random_uniform((layer2_size,)))
-        layer2 = tf.sigmoid(tf.matmul(layer1, W2) + b2)
+            W1 = tf.Variable(tf.random_uniform((input_size, layer1_size)))
+            b1 = tf.Variable(tf.random_uniform((layer1_size,)))
+            layer1 = tf.sigmoid(tf.matmul(x, W1) + b1)
 
-        W3 = tf.Variable(tf.random_uniform((layer2_size, output_size)))
-        b3 = tf.Variable(tf.random_uniform((output_size,)))
-        layer3 = tf.sigmoid(tf.matmul(layer2, W3) + b3)
+            W2 = tf.Variable(tf.random_uniform((layer1_size, layer2_size)))
+            b2 = tf.Variable(tf.random_uniform((layer2_size,)))
+            layer2 = tf.sigmoid(tf.matmul(layer1, W2) + b2)
 
-        return layer3
-        # return tf.reshape(layer3, shape=(None,window_width * window_width * 3))
+            W3 = tf.Variable(tf.random_uniform((layer2_size, output_size)))
+            b3 = tf.Variable(tf.random_uniform((output_size,)))
+            layer3 = tf.sigmoid(tf.matmul(layer2, W3) + b3)
 
-    def bilateral_filter_window(img, w):
-        return tf.reduce_sum(img * w, (0,1)) / tf.reduce_sum(w)
+            return layer3
+            # return tf.reshape(layer3, shape=(None,window_width * window_width * 3))
 
-    x = tf.placeholder(tf.float32, [None, width * width * depth])
-    xcol = tf.placeholder(tf.float32, [None, width * width * 3])
-    y_ = tf.placeholder(tf.float32, [None, 3])
-    w = filter_weights(x, depth=depth, window_width=width)
-    # y = bilateral_filter_window(xcol, w)
-    W4 = tf.Variable(tf.random_uniform((width * width * 3, 3)))
-    b4 = tf.Variable(tf.random_uniform((3,)))
-    y = tf.matmul(w, W4) + b4 # no sigmoid on last layer
-    eps = tf.constant(1e-8)
-    # relmse = tf.reduce_sum(tf.square(y - y_)/(tf.square(y_) + eps))
-    mse = tf.reduce_sum(tf.square(y - y_))
-    # train_step = tf.train.AdamOptimizer(1e-4).minimize(relmse)
-    train_step = tf.train.AdamOptimizer(1e-3).minimize(mse)
+        # def bilateral_filter_window(img, w):
+        #     return tf.reduce_sum(img * w, (0,1)) / tf.reduce_sum(w)
 
-    return x, xcol, y_, y, train_step, mse
+        x = tf.placeholder(tf.float32, [None, width * width * depth])
+        xcol = tf.placeholder(tf.float32, [None, width * width * 3])
+        y_ = tf.placeholder(tf.float32, [None, 3])
+        w = filter_weights(x, depth=depth, window_width=width)
+        # y = bilateral_filter_window(xcol, w)
+        W4 = tf.Variable(tf.random_uniform((width * width * 3, 3)))
+        b4 = tf.Variable(tf.random_uniform((3,)))
+        y = tf.matmul(w, W4) + b4 # no sigmoid on last layer
+
+        eps = tf.constant(1e-8)
+        # relmse = tf.reduce_sum(tf.square(y - y_)/(tf.square(y_) + eps))
+        mse = tf.reduce_sum(tf.square(y - y_))
+        # train_step = tf.train.AdamOptimizer(1e-4).minimize(relmse)
+        train_step = tf.train.AdamOptimizer(1e-3).minimize(mse)
+
+        self.x = x
+        self.xcol = xcol
+        self.y_ = y_
+        self.y = y
+        self.train_step = train_step
+        self.mse = mse
+
+    def run_epoch(self, dataset, epoch_size=100):
+        xs, ys_ = zip(*dataset.next_batch(epoch_size))
+        flat_xs, flat_xcols, ys_ = flatten_xy(xs, ys_)
+        self.train_step.run(feed_dict={
+            self.x: flat_xs,
+            self.xcol: flat_xcols,
+            self.y_: ys_})
+
+    def test_model(self, dataset, instances=10):
+        xs, xcols, ys_ = get_batch(dataset, instances)
+        errsum = self.mse.eval(feed_dict={
+            self.x: xs,
+            self.xcol: xcols,
+            self.y_: ys_})
+        return errsum / instances
+
+
+    def filter_scene(self, scene):
+        wins = scene.flat_windows()
+        print(len(wins), wins[0].shape)
+
+        xs, xcols = flatten_x(wins)
+        pixels = self.y.eval(feed_dict={
+            self.x: xs,
+            self.xcol: xcols})
+
+
+        # reassemble image
+        print(len(pixels), pixels.shape)
+        w, h = scene.shape_windows()
+        print(w, h)
+        img = []
+        i = 0
+        for _ in range(h):
+            img.append([pixels[i:i+w] for _ in range(w)])
+            i += w
+
+
+        arr = np.stack(img)
+        print(arr.shape)
+        return arr
+
 
 def get_batch(dataset, instances=10):
     xs, ys_ = zip(*dataset.next_batch(instances))
@@ -66,6 +117,17 @@ def get_batch(dataset, instances=10):
 
     return flat_xs, flat_xcols, ys_
 
+def flatten_x(xs):
+    xcols = [xi[:,:,10:13] for xi in xs]
+
+    xsize = int(prod(xs[0].shape))
+    flat_xs = np.stack([np.reshape(xi, (xsize,)) for xi in xs], axis=0)
+
+    xcsize = prod(xcols[0].shape)
+    flat_xcols = np.stack([np.reshape(xi, (xcsize,)) for xi in xcols])
+
+    return flat_xs, flat_xcols
+
 
 def flatten_xy(xs, ys_):
     xcols = [xi[:,:,10:13] for xi in xs]
@@ -78,21 +140,6 @@ def flatten_xy(xs, ys_):
 
     return flat_xs, flat_xcols, ys_
 
-def run_epoch(x, xcol, y_, train_step, dataset, epoch_size=100):
-    xs, ys_ = zip(*dataset.next_batch(epoch_size))
-    flat_xs, flat_xcols, ys_ = flatten_xy(xs, ys_)
-    train_step.run(feed_dict={x: flat_xs, xcol: flat_xcols, y_: ys_})
-
-def test_model(x, xcol, y_, err, dataset, instances=10):
-    xs, xcols, ys_ = get_batch(dataset, instances)
-    errsum = err.eval(feed_dict={x: xs, xcol: xcols, y_: ys_})
-    return errsum / instances
-
-
-def filter_scene(y, scene):
-    wins = scene.windows()
-
-    return np.array([[y.eval(feed_dict={x: w}) for w in row] for row in wins])
 
 if __name__ == '__main__':
     kwidth=11

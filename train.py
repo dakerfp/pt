@@ -1,6 +1,11 @@
 import tensorflow as tf
+import numpy as np
 import create_batches
 import lbf
+
+
+def smooth(xs, w):
+    return [sum(xs[i:i+w]) / w for i in range(len(xs)-w)]
 
 if __name__ == '__main__':
     kwidth=11
@@ -13,34 +18,32 @@ if __name__ == '__main__':
         npys = zip(sys.argv[1::2], sys.argv[2::2])
         dataset = create_batches.Dataset(npys, 25)
 
-    depth = dataset.next()[0].shape[2]
-
-    x, xcol, y_, y, train_step, err = lbf.create_network(width=kwidth,depth=depth)
+    flt = lbf.LearningBasedFilter(width=kwidth,depth=dataset.depth())
     saver = tf.train.Saver()
-
     sess = tf.InteractiveSession()
-
     sess.run(tf.global_variables_initializer())
 
     errs = []
     for epoch in range(101):
-        lbf.run_epoch(x, xcol, y_, train_step, dataset)
-        e = lbf.test_model(x, xcol, y_, err, dataset)
+        flt.run_epoch(dataset)
+        e = flt.test_model(dataset)
         print("epoch:", epoch, e)
         errs.append(e)
         if epoch % 100 == 0:
-            saver.save(sess, 'lbf-basic', global_step=epoch)
+            print("save")
+            saver.save(sess, 'lbf-basic')
+
 
     import matplotlib.pyplot as plt
+
     fig = plt.figure()
-    smooth = lambda xs, w: [sum(xs[i:i+w]) / w for i in range(len(xs)-w)]
     fig.add_subplot(2,2,1)
     # plt.plot(errs)
     plt.plot(smooth(errs, 20))
     plt.plot(smooth(errs, 100))
     plt.plot(smooth(errs, 500))
     plt.plot(smooth(errs, 1000))
-    # scene = dataset.scenes[1]
+    scene = dataset.scenes[1]
     # img = lbf.filter_scene(y, scene)
     # fig.add_subplot(2,2,2)
     # plt.imshow(np.clip(img, 0, 1))
