@@ -28,7 +28,8 @@ class Scene(object):
 		return self.arr[:,:,:3]
 
 	def gt_color(self):
-		col = self.gt[:,:,:3]
+		# col = self.gt[:,:,:3]
+		col = self.gt[:,:,10:13]
 		return np.clip(col, 0, 1)
 
 class Dataset(object):
@@ -50,7 +51,14 @@ class ZipDataset(object):
 			return np.load(buff)
 
 		zipfiles = [zipfile.ZipFile(fn) for fn in zipfilenames]
-		filetuples = [(load(zf, pre, lowres), load(zf, pre, hires)) for pre, zf in itt.product(prefixes, zipfiles)]
+
+		filetuples = []
+		for pre, zf in itt.product(prefixes, zipfiles):
+			try:
+		 		tupl = load(zf, pre, lowres), load(zf, pre, hires)
+		 		filetuples.append(tupl)
+		 	except Exception as e:
+		 		print(e, "with", zf)
 		self.scenes = [Scene(fn, gt, kernel_size) for (fn, gt) in filetuples]
 
 	def next(self):
