@@ -54,12 +54,21 @@ func (s *DefaultSampler) Sample(scene *Scene, ray Ray, rnd *rand.Rand) Color {
 	return s.sample(scene, ray, true, s.FirstHitSamples, 0, rnd).Color
 }
 
+type Indirect struct {
+	Color
+	WasCast  float64
+	Dist     float64
+	Specular float64
+	Diffuse  float64
+}
+
 type Features struct {
 	Color
 	Distance float64
 	Normal   Vector
 	Hits     bool
 	Material Material
+	Indirect
 }
 
 func (s *DefaultSampler) SampleFeature(scene *Scene, ray Ray, rnd *rand.Rand) Features {
@@ -67,12 +76,13 @@ func (s *DefaultSampler) SampleFeature(scene *Scene, ray Ray, rnd *rand.Rand) Fe
 }
 
 func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, depth int, rnd *rand.Rand) Features {
+	var ind Indirect
 	if depth > s.MaxBounces {
-		return Features{Black, 0, Vector{}, false, Material{}}
+		return Features{Black, 0, Vector{}, false, Material{}, ind}
 	}
 	hit := scene.Intersect(ray)
 	if !hit.Ok() {
-		return Features{s.sampleEnvironment(scene, ray), 0, Vector{}, hit.Ok(), Material{}}
+		return Features{s.sampleEnvironment(scene, ray), 0, Vector{}, hit.Ok(), Material{}, ind}
 	}
 	info := hit.Info(ray)
 	material := info.Material
@@ -80,7 +90,7 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 	dist := VecDist(info.Position, ray.Origin)
 	if material.Emittance > 0 {
 		if s.DirectLighting && !emission {
-			return Features{Black, dist, Vector{}, hit.Ok(), material}
+			return Features{Black, dist, Vector{}, hit.Ok(), material, ind}
 		}
 		result = result.Add(material.Color.MulScalar(material.Emittance * float64(samples)))
 	}
@@ -106,7 +116,13 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 					// specular
 					indirect := s.sample(scene, newRay, reflected, 1, depth+1, rnd)
 					tinted := indirect.Color.Mix(material.Color.Mul(indirect.Color), material.Tint)
-					result = result.Add(tinted.MulScalar(p))
+					c := tinted.MulScalar(p)
+					result = result.Add(c)
+					// saving 2nd features
+					ind.Color = ind.Color.Add(c)
+					ind.WasCast += 1.0
+					ind.Dist += indirect.Dist
+					ind.Specular += 1.0
 				}
 				if p > 0 && !reflected {
 					// diffuse
@@ -115,12 +131,24 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 					if s.DirectLighting {
 						direct = s.sampleLights(scene, info.Ray, rnd)
 					}
-					result = result.Add(material.Color.Mul(direct.Add(indirect.Color)).MulScalar(p))
+					c := material.Color.Mul(direct.Add(indirect.Color)).MulScalar(p)
+					result = result.Add(c)
+					// saving 2nd features
+					ind.Color = ind.Color.Add(c)
+					ind.WasCast += 1.0
+					ind.Dist += indirect.Dist
+					ind.Diffuse += 1.0
 				}
 			}
 		}
 	}
-	return Features{result.DivScalar(float64(n * n)), dist, info.Normal, hit.Ok(), material}
+	n2 := float64(n * n)
+	ind.Color = ind.DivScalar(float64(n * n))
+	ind.WasCast /= n2
+	ind.Dist /= n2
+	ind.Specular /= n2
+	ind.Diffuse /= n2
+	return Features{result.DivScalar(n2), dist, info.Normal, hit.Ok(), material, ind}
 }
 
 func (s *DefaultSampler) sampleEnvironment(scene *Scene, ray Ray) Color {

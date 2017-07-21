@@ -32,6 +32,12 @@ type Pixel struct {
 	tint         FloatDistribution
 	reflectivity FloatDistribution
 	transparent  FloatDistribution
+	// new features
+	color2    ColorDistribution
+	wasCast2  FloatDistribution
+	dist2     FloatDistribution
+	specular2 FloatDistribution
+	diffuse2  FloatDistribution
 }
 
 func (p *Pixel) AddSample(sample Color) {
@@ -60,6 +66,12 @@ func (p *Pixel) AddSampleFeature(sample Features) {
 		transp = 1.0
 	}
 	p.transparent.AddSample(transp)
+
+	p.color2.AddSample(sample.Indirect.Color)
+	p.wasCast2.AddSample(sample.Indirect.WasCast)
+	p.dist2.AddSample(sample.Indirect.Dist)
+	p.specular2.AddSample(sample.Indirect.Specular)
+	p.diffuse2.AddSample(sample.Indirect.Diffuse)
 }
 
 func (p *Pixel) Color() Color {
@@ -88,16 +100,18 @@ func (p *Pixel) Normal() Color {
 	return Color{n.X, n.Y, n.Z}
 }
 
-const FeatureRawSize = 38
+const FeatureRawSize = 52
 
 func (p *Pixel) Raw() []float64 {
 	col := p.color.Avg()
 	norm := p.normal.Avg()
 	albedo := p.albedo.Avg()
+	col2 := p.color2.Avg()
 	colVar := p.color.Variance()
 	normVar := p.normal.Variance()
 	albedoVar := p.albedo.Variance()
 	distVar := p.dist.Variance()
+	col2Var := p.color2.Variance()
 	gamma := col.Pow(1 / 2.2)
 	return []float64{
 		// Primary features
@@ -142,6 +156,22 @@ func (p *Pixel) Raw() []float64 {
 
 		// Other
 		p.hits.Avg(),
+
+		// indirect features
+		col2.R, // avg
+		col2.G,
+		col2.B,
+		p.wasCast2.Avg(),
+		p.dist2.Avg(),
+		p.specular2.Avg(),
+		p.diffuse2.Avg(),
+		col2Var.R, // variance
+		col2Var.G,
+		col2Var.B,
+		p.wasCast2.Variance(),
+		p.dist2.Variance(),
+		p.specular2.Variance(),
+		p.diffuse2.Variance(),
 	}
 }
 
