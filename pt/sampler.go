@@ -121,7 +121,7 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 					// saving 2nd features
 					ind.Color = ind.Color.Add(c)
 					ind.WasCast += 1.0
-					ind.Dist += indirect.Dist
+					ind.Dist += indirect.Distance
 					ind.Specular += 1.0
 				}
 				if p > 0 && !reflected {
@@ -136,7 +136,7 @@ func (s *DefaultSampler) sample(scene *Scene, ray Ray, emission bool, samples, d
 					// saving 2nd features
 					ind.Color = ind.Color.Add(c)
 					ind.WasCast += 1.0
-					ind.Dist += indirect.Dist
+					ind.Dist += indirect.Distance
 					ind.Diffuse += 1.0
 				}
 			}
