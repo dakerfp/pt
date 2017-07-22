@@ -34,12 +34,25 @@ transp_var = arr[:,:,36]
 # other
 hits = arr[:,:,37]
 
+# indirect
+col2 = arr[:,:,38:41]
+wasCast2 = arr[:,:,41]
+dist2 = arr[:,:,42]
+spec2 = arr[:,:,43]
+diff2 = arr[:,:,44]
+
+col2_var = arr[:,:,45:48]
+wasCast2_var = arr[:,:,48]
+dist2_var = arr[:,:,49]
+spec2_var = arr[:,:,50]
+diff2_var = arr[:,:,51]
+
 import matplotlib.pyplot as plt
 
 def imgshow_all(*args):
 	fig = plt.figure()
-	cols=5
-	rows=5
+	cols=6
+	rows=6
 	for i, img in enumerate(args):
 		fig.add_subplot(rows, cols, i+1)
 		plt.imshow(img, interpolation='nearest')
@@ -70,6 +83,18 @@ imgshow_all(
 	refl_var,
 	transp_var,
 	hits,
+
+	col2,
+	wasCast2,
+	dist2,
+	spec2,
+	diff2,
+
+	col2_var,
+	wasCast2_var,
+	dist2_var,
+	spec2_var,
+	diff2_var
 )
 
 plt.show()

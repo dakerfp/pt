@@ -8,11 +8,11 @@ def smooth(xs, w):
     return [sum(xs[i:i+w]) / w for i in range(len(xs)-w)]
 
 if __name__ == '__main__':
-    kwidth=11
-
     import sys
+    kwidth=11
     dataset = None
-    if sys.argv[1].endswith(".zip"):
+
+    if any(fn.endswith(".zip") for fn in sys.argv[1:]):
         dataset = create_batches.ZipDataset(sys.argv[1:], prefixes=[1, 2, 3, 4, 5, 6], lowres=16, hires=1024, kernel_size=kwidth)
     else:
         npys = zip(sys.argv[1::2], sys.argv[2::2])
@@ -24,14 +24,14 @@ if __name__ == '__main__':
     sess.run(tf.global_variables_initializer())
 
     errs = []
-    for epoch in range(101):
+    for epoch in range(5001):
         flt.run_epoch(dataset)
         e = flt.test_model(dataset)
         print("epoch:", epoch, e)
         errs.append(e)
-        if epoch % 100 == 0:
+        if epoch % 1000 == 0:
             print("save")
-            saver.save(sess, 'lbf-basic')
+            saver.save(sess, 'lbf-g-v')
 
 
     import matplotlib.pyplot as plt
@@ -52,3 +52,4 @@ if __name__ == '__main__':
     fig.add_subplot(2,2,4)
     plt.imshow(np.clip(scene.gt_color(), 0, 1))
     plt.show()
+    plt.save("a.png")

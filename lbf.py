@@ -32,22 +32,22 @@ class LearningBasedFilter(object):
 
             W3 = tf.Variable(tf.random_uniform((layer2_size, output_size)))
             b3 = tf.Variable(tf.random_uniform((output_size,)))
-            layer3 = tf.sigmoid(tf.matmul(layer2, W3) + b3)
+            layer3 = tf.nn.relu(tf.matmul(layer2, W3) + b3)
 
-            return layer3
+            w = layer3
+            w = tf.nn.relu(w)
+            w = w / tf.reduce_sum(w)
+            return w
             # return tf.reshape(layer3, shape=(None,window_width * window_width * 3))
-
-        # def bilateral_filter_window(img, w):
-        #     return tf.reduce_sum(img * w, (0,1)) / tf.reduce_sum(w)
 
         x = tf.placeholder(tf.float32, [None, width * width * depth])
         xcol = tf.placeholder(tf.float32, [None, width * width * 3])
         y_ = tf.placeholder(tf.float32, [None, 3])
-        w = filter_weights(x, depth=depth, window_width=width)
-        # y = bilateral_filter_window(xcol, w)
-        W4 = tf.Variable(tf.random_uniform((width * width * 3, 3)))
-        b4 = tf.Variable(tf.random_uniform((3,)))
-        y = tf.matmul(w, W4) + b4 # no sigmoid on last layer
+
+        w = filter_weights(x, depth, width)
+        g = tf.Variable(tf.random_uniform((width * width * 3, 3), minval=0)) # learn geometric relationship and how they add to final color
+        y = tf.matmul(xcol * w, g) # bilateral filter
+        print(w, g, y)
 
         eps = tf.constant(1e-8)
         # relmse = tf.reduce_sum(tf.square(y - y_)/(tf.square(y_) + eps))
@@ -90,17 +90,12 @@ class LearningBasedFilter(object):
 
 
         # reassemble image
+        print(self.y)
         print(len(pixels), pixels.shape)
+        print(pixels)
+
         w, h = scene.shape_windows()
-        print(w, h)
-        img = []
-        i = 0
-        for _ in range(h):
-            img.append([pixels[i:i+w] for _ in range(w)])
-            i += w
-
-
-        arr = np.stack(img)
+        arr = np.reshape(pixels, (h,w,3))
         print(arr.shape)
         return arr
 
@@ -162,12 +157,12 @@ if __name__ == '__main__':
     sess.run(tf.global_variables_initializer())
 
     errs = []
-    for epoch in range(101):
-        run_epoch(train_step, dataset)
+    for epoch in range(1001):
+        run_epoch(train_step, dataset, epoch_size=500)
         e = test_model(x, xcol, y_, err, dataset)
         print("epoch:", epoch, e)
         errs.append(e)
-        if epoch % 100 == 0:
+        if epoch > 10 and epoch % 1000 == 0:
             saver.save(sess, 'lbf-basic', global_step=epoch)
 
     import matplotlib.pyplot as plt
