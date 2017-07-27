@@ -40,8 +40,6 @@ if __name__ == '__main__':
     fig.add_subplot(2,2,1)
     # plt.plot(errs)
     plt.plot(smooth(errs, 20))
-    plt.plot(smooth(errs, 100))
-    plt.plot(smooth(errs, 500))
     plt.plot(smooth(errs, 1000))
     scene = dataset.scenes[1]
     # img = lbf.filter_scene(y, scene)

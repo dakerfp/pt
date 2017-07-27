@@ -29,10 +29,15 @@ class Scene(object):
 		k = self.kernel_size
 		return [self.arr[y:y+k,x:x+k,:] for x, y in itt.product(range(w-k),range(h-k))]
 
+	def iter_windows(self):
+		h, w, d = self.arr.shape
+		k = self.kernel_size
+		return ((y, x, self.arr[y:y+k,x:x+k,:]) for x, y in itt.product(range(w-k),range(h-k)))
+
 	def shape_windows(self):
 		h, w, _ = self.arr.shape
 		k = self.kernel_size
-		return w-k, h-k
+		return h-k, w-k
 
 	def depth(self):
 		return self.arr.shape[2]
