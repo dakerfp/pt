@@ -13,7 +13,7 @@ if __name__ == '__main__':
     dataset = None
 
     if any(fn.endswith(".zip") for fn in sys.argv[1:]):
-        dataset = create_batches.ZipDataset(sys.argv[1:], prefixes=[1, 2, 3, 4, 5, 6], lowres=16, hires=1024, kernel_size=kwidth)
+        dataset = create_batches.ZipDataset(sys.argv[1:], prefixes=[3, 4, 5, 6], lowres=16, hires=1024, kernel_size=kwidth)
     else:
         npys = zip(sys.argv[1::2], sys.argv[2::2])
         dataset = create_batches.Dataset(npys, 25)
@@ -24,30 +24,25 @@ if __name__ == '__main__':
     sess.run(tf.global_variables_initializer())
 
     errs = []
-    for epoch in range(5001):
-        flt.run_epoch(dataset)
-        e = flt.test_model(dataset)
+    berrs = []
+    for epoch in range(501):
+        flt.run_epoch(dataset, 1000)
+        e = flt.test_model(sess, dataset)
         print("epoch:", epoch, e)
         errs.append(e)
-        if epoch % 1000 == 0:
+        if epoch % 100 == 0 and epoch > 10:
             print("save")
-            saver.save(sess, 'lbf-g-v')
+            saver.save(sess, 'lbf-new-v')
 
+    np.save('./errs.txt', errs)
 
     import matplotlib.pyplot as plt
 
     fig = plt.figure()
-    fig.add_subplot(2,2,1)
-    # plt.plot(errs)
     plt.plot(smooth(errs, 20))
-    plt.plot(smooth(errs, 1000))
+    # plt.plot(smooth(berrs, 20))
+    plt.plot(smooth(errs, 100))
+    # plt.plot(smooth(berrs, 100))
     scene = dataset.scenes[1]
-    # img = lbf.filter_scene(y, scene)
-    # fig.add_subplot(2,2,2)
-    # plt.imshow(np.clip(img, 0, 1))
-    fig.add_subplot(2,2,3)
-    plt.imshow(np.clip(scene.color(), 0, 1))
-    fig.add_subplot(2,2,4)
-    plt.imshow(np.clip(scene.gt_color(), 0, 1))
     plt.show()
-    plt.save("a.png")
+    # plt.save("a.png")
