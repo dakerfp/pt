@@ -192,11 +192,11 @@ func isPow2(x int) bool {
 func (r *Renderer) ExportFeatures(pathTemplate string, iterations int) {
 	var wg sync.WaitGroup
 	for i := 1; i <= iterations; i++ {
+		r.printf("[Iteration %d of %d]\n", i, iterations)
 		r.run()
-		if i > 16 && !isPow2(i) {
+		if i < iterations { // XXX
 			continue
 		}
-		r.printf("\n[Iteration %d of %d]\n", i, iterations)
 
 		path := pathTemplate
 		if strings.Contains(path, "%") {

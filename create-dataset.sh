@@ -3,8 +3,27 @@
 SOURCE="${BASH_SOURCE[0]}"
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 # EXAMPLES="$(ls examples/ | grep .go | grep -v volume | grep -v dragon.obj | sed -e "s/.go$//")"
-EXAMPLES="veach_scene
-volume"
+EXAMPLES="
+cornell
+go
+dragon
+cubes
+teapot
+hdri
+maze
+gopher
+toybrick
+counties
+materials
+ellipsoid
+runway
+example
+love
+bunny
+craft
+cylinder
+volume
+sdf"
 
 cd "${DIR}"
 mkdir -p dataset
