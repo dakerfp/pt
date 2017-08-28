@@ -11,6 +11,7 @@ def prod(xs):
             p *= x
     return p
 
+
 def flatten_x(xs):
     xcols = [xi[:,:,10:13] for xi in xs]
 
@@ -21,6 +22,7 @@ def flatten_x(xs):
     flat_xcols = np.stack([np.reshape(xi, (xcsize,)) for xi in xcols])
 
     return flat_xs, flat_xcols
+
 
 def fake_filter(flt, scene, sess):
     h, w = scene.shape_windows()
@@ -45,6 +47,7 @@ def fake_filter(flt, scene, sess):
     # arr = np.array(arr)
     print(arr.shape)
     return arr[:,:,:3]
+
 
 def show_images(flt, dataset, sess):
     imgs = []

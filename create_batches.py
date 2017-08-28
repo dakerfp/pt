@@ -6,17 +6,18 @@ import io
 import itertools as itt
 
 class Scene(object):
-	def __init__(self, arr, gt, kernel_size=11):
+	def __init__(self, arr, gt, kernel_size=11, depth=52):
 		self.arr = arr
 		self.gt = gt
 		self.kernel_size = kernel_size
+		self.depth = depth
 
 	def next(self):
 		h, w, d = self.arr.shape
 		k = self.kernel_size
 		x = random.randint(0, w - k - 1)
 		y = random.randint(0, h - k - 1)
-		return self.arr[y:y+k,x:x+k,:], self.arr[y+k/2,x+k/2,:3]
+		return self.arr[y:y+k,x:x+k,:self.depth], self.gt[y+k/2,x+k/2,10:13]
 
 	def windows(self):
 		h, w, d = self.arr.shape
@@ -39,11 +40,8 @@ class Scene(object):
 		k = self.kernel_size
 		return h-k, w-k
 
-	def depth(self):
-		return self.arr.shape[2]
-
 	def color(self):
-		return self.arr[:,:,:3]
+		return self.arr[:,:,10:3]
 
 	def gt_color(self):
 		# col = self.gt[:,:,:3]
@@ -51,21 +49,20 @@ class Scene(object):
 		return np.clip(col, 0, 1)
 
 class Dataset(object):
-	def __init__(self, filetuples, kernel_size=11):
-		self.scenes = [Scene(np.load(fn), np.load(gt), kernel_size) for (fn, gt) in filetuples]
+	def __init__(self, filetuples, kernel_size=11, depth=52):
+		self.scenes = [Scene(np.load(fn), np.load(gt), kernel_size, depth) for (fn, gt) in filetuples]
+		self.depth = depth
 
 	def next(self):
 		s = random.choice(self.scenes)
 		return s.next()
 
 	def next_batch(self, n):
-		return [self.next() for _ in range(n)]
+		return [self.next() for _ in xrange(n)]
 
-	def depth(self):
-		return self.scenes[0].depth()
 
 class ZipDataset(object):
-	def __init__(self, zipfilenames, prefixes=[1], lowres=16, hires=1024, kernel_size=11):
+	def __init__(self, zipfilenames, prefixes=[1], lowres=16, hires=1024, kernel_size=11, depth=52):
 		def load(zf, prefix, spp):
 			template = '%d-%04d.npy'
 			buff = io.BufferedReader(zf.open(template % (prefix, spp)))
@@ -80,17 +77,15 @@ class ZipDataset(object):
 		 		filetuples.append(tupl)
 		 	except Exception as e:
 		 		print(e, "with", zf)
-		self.scenes = [Scene(fn, gt, kernel_size) for (fn, gt) in filetuples]
+		self.scenes = [Scene(fn, gt, kernel_size, depth) for (fn, gt) in filetuples]
+		self.depth = depth
 
 	def next(self):
 		s = random.choice(self.scenes)
 		return s.next()
 
 	def next_batch(self, n):
-		return [self.next() for _ in range(n)]
-
-	def depth(self):
-		return self.scenes[0].depth()
+		return [self.next() for _ in xrange(n)]
 
 	def next_scene(self):
 		return random.choice(self.scenes)

@@ -43,10 +43,17 @@ class LearningBasedFilter(object):
         y_ = tf.placeholder(tf.float32, [None, 3])
 
         w = filter_weights(x, depth, width)
-        g = tf.Variable(tf.random_uniform((width * width * 3, 3), minval=0, maxval=1)) # learn geometric relationship and how they add to final color
+        # g = tf.Variable(tf.random_uniform((width * width * 3, 3), minval=0, maxval=1)) # learn geometric relationship and how they add to final color
         # relu to ensure it is positive
-        y = tf.matmul(xcol * w, g) # bilateral filter
+        # y = tf.matmul(xcol * w, g) # bilateral filter
         # print(w, g, y)
+        sumcol = xcol * w
+        sw = tf.reduce_sum(w)
+        r = tf.reduce_sum(sumcol[:,0::3], axis=1)
+        g = tf.reduce_sum(sumcol[:,1::3], axis=1)
+        b = tf.reduce_sum(sumcol[:,2::3], axis=1)
+        y = tf.stack((r,g,b), axis=1) / sw
+        print(xcol, w, r, g, b, y)
 
         def relmse(y, y_):
             eps = tf.constant(1e-8)

@@ -51,15 +51,17 @@ def show_images(flt, dataset, sess):
      
     scene = dataset.next_scene()
     y = fake_filter(flt, scene, sess)
-    imgs.append((scene.arr[:,:,:3], y))
+    imgs.append((scene.arr[:,:,10:13], y, scene.gt[:,:,10:13]))
 
     import matplotlib.pyplot as plt
     fig = plt.figure()
     print("plotting")
-    fig.add_subplot(1, 2, 1)
+    fig.add_subplot(1, 3, 1)
     plt.imshow(imgs[0][0])
-    fig.add_subplot(1, 2, 2)
+    fig.add_subplot(1, 3, 2)
     plt.imshow(imgs[0][1])
+    fig.add_subplot(1, 3, 3)
+    plt.imshow(imgs[0][2])
     plt.show()
 
 
@@ -69,12 +71,12 @@ if __name__ == '__main__':
     import sys
     dataset = None
     if sys.argv[1].endswith(".zip"):
-        dataset = create_batches.ZipDataset(sys.argv[1:], prefixes=[3], lowres=16, hires=1024, kernel_size=kwidth)
+        dataset = create_batches.ZipDataset(sys.argv[1:], prefixes=[3], lowres=32, hires=1024, kernel_size=kwidth, depth=37)
     else:
         npys = zip(sys.argv[1::2], sys.argv[2::2])
         dataset = create_batches.Dataset(npys, 25)
 
-    depth = dataset.depth()
+    depth = dataset.depth
     flt = lbf.LearningBasedFilter(width=kwidth,depth=depth)
     saver = tf.train.Saver()
     with tf.Session() as sess:
